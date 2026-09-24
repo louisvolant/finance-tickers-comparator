@@ -1,0 +1,20 @@
+name = "ticker-tracker"
+main = ".open-next/worker.js"
+compatibility_date = "2025-04-01"
+compatibility_flags = ["nodejs_compat"]
+keep_vars = true
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[[kv_namespaces]]
+binding = "TICKER_TRACKER_KV"
+id = "ticker_tracker_kv_prod_id"
+preview_id = "ticker_tracker_kv_preview_id"
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
