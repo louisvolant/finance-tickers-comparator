@@ -83,6 +83,17 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
 - `GET /api/auth/google`: Trigger Google OAuth2 consent flow.
 - `GET /api/auth/callback/google`: Handle OAuth redirect, profile sync, and session issuing.
 
+---
+
+## Mobile & PWA Experience
+
+Ticker-Tracker is engineered mobile-first:
+- **Instantaneous Startup**: Opening the application from your home screen immediately reads the cached watchlist and quotes from browser **IndexedDB**, eliminating network delay and white-screens.
+- **Dedicated Mobile Cards**: Every card prominently displays the current market price, the percentage diff against your target baseline, and highlighted **Current P/E** and **Forward P/E** multiples.
+- **Interactive Deep-Dive**: Tapping any card opens a modal with historical price trends (1D, 5D, 1M, 6M, 1Y, 5Y), a 52-week price range meter, and fundamental financial metrics (Market Cap, Dividend Yield, EPS, Beta, Volume).
+- **Watchlist Reordering**: Easily adjust ticker priorities with one-tap Up/Down buttons, synced locally and to Cloudflare KV.
+- **Offline Capable**: Fully functional offline via Service Worker asset caching.
+
 ## Running Tests
 
 ```bash
