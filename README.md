@@ -45,6 +45,26 @@ For Cloudflare Workers deployment:
 npm run deploy
 ```
 
+### Environment Variables
+
+Create a `.env.local` file for development or set them in Cloudflare Workers settings:
+
+```ini
+# Session cookie secret (32+ chars recommended)
+SESSION_SECRET="your-secure-session-secret"
+
+# Optional: Google OAuth 2.0 Credentials
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# Base URL for metadata / SEO
+NEXT_PUBLIC_APP_URL="https://ticker-tracker.pages.dev"
+```
+
+For Cloudflare Workers production:
+- Bind a KV namespace called `TICKER_TRACKER_KV` in `wrangler.toml` or Cloudflare Dashboard.
+- Secrets (`SESSION_SECRET`, `GOOGLE_CLIENT_SECRET`) can be set using `wrangler secret put <NAME>`.
+
 ---
 
 ## Architecture & KV Caching
