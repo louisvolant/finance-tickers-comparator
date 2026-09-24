@@ -3,20 +3,22 @@ import { kvGet, kvPut } from '@/lib/kv';
 import { setSessionUser } from '@/lib/session';
 import { UserRecord } from '@/lib/types';
 
+import { getEnvVar, getRequestOrigin } from '@/lib/env';
+
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const origin = request.nextUrl.origin;
+  const origin = getRequestOrigin(request);
   const redirectUri = `${origin}/api/auth/callback/google`;
 
   if (!code) {
     return NextResponse.redirect(`${origin}?auth_error=missing_code`);
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const clientId = getEnvVar('GOOGLE_CLIENT_ID');
+  const clientSecret = getEnvVar('GOOGLE_CLIENT_SECRET');
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(`${origin}?auth_error=google_credentials_missing`);

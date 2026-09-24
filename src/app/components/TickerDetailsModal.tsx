@@ -124,6 +124,7 @@ export function TickerDetailsModal({
             <button
               onClick={onClose}
               className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+              aria-label="Close details modal"
             >
               <X className="w-5 h-5" />
             </button>

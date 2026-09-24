@@ -35,6 +35,7 @@ export function TickerCard({
 
   return (
     <div
+      data-symbol={ticker.symbol}
       onClick={() => onClick(ticker)}
       className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md hover:border-slate-700 active:scale-[0.99] transition cursor-pointer select-none"
     >

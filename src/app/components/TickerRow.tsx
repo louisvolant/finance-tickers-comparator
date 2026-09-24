@@ -35,6 +35,7 @@ export function TickerRow({
 
   return (
     <tr
+      data-symbol={ticker.symbol}
       onClick={() => onClick(ticker)}
       className="group border-b border-slate-800/60 hover:bg-slate-900/60 transition cursor-pointer"
     >

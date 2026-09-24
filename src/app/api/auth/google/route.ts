@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getEnvVar, getRequestOrigin } from '@/lib/env';
+
 export const runtime = 'nodejs';
 
 export async function GET(request: NextRequest) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const origin = request.nextUrl.origin;
+  const clientId = getEnvVar('GOOGLE_CLIENT_ID');
+  const origin = getRequestOrigin(request);
   const redirectUri = `${origin}/api/auth/callback/google`;
 
   if (!clientId) {

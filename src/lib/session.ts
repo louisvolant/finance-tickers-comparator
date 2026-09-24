@@ -2,11 +2,13 @@ import { cookies } from 'next/headers';
 import { signSession, verifySession } from './authCrypto';
 import { SessionUser } from './types';
 
+import { getEnvVar } from './env';
+
 const SESSION_COOKIE_NAME = 'tt_session';
 const SESSION_TTL_SEC = 30 * 24 * 60 * 60; // 30 days
 
 export function getSessionSecret(): string {
-  return process.env.SESSION_SECRET || 'ticker-tracker-production-super-secret-key-32b';
+  return getEnvVar('SESSION_SECRET') || 'ticker-tracker-production-super-secret-key-32b';
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {

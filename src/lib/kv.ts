@@ -42,14 +42,33 @@ function persistLocalStore() {
  * Resolves the Cloudflare KV binding if running in Cloudflare Workers.
  */
 function getCloudflareKV(): any {
-  // Check Cloudflare global context or process.env binding
-  if (typeof (globalThis as any).TICKER_TRACKER_KV !== 'undefined') {
-    return (globalThis as any).TICKER_TRACKER_KV;
+  try {
+    // Check OpenNext context
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getCloudflareContext } = require('@opennextjs/cloudflare');
+    const ctx = getCloudflareContext?.();
+    if (ctx?.env?.KV || ctx?.env?.ticker_tracker_kv || ctx?.env?.TICKER_TRACKER_KV) {
+      return ctx.env.KV || ctx.env.ticker_tracker_kv || ctx.env.TICKER_TRACKER_KV;
+    }
+  } catch {
+    // Non-OpenNext / local fallback
   }
-  if (typeof (process.env as any).TICKER_TRACKER_KV !== 'undefined' && typeof (process.env as any).TICKER_TRACKER_KV.get === 'function') {
-    return (process.env as any).TICKER_TRACKER_KV;
-  }
-  return null;
+
+  const g = globalThis as any;
+  const p = process.env as any;
+  return (
+    g.KV ||
+    p.KV ||
+    g.ticker_tracker_kv ||
+    g.TICKER_TRACKER_KV ||
+    p.ticker_tracker_kv ||
+    p.TICKER_TRACKER_KV ||
+    g.__env__?.KV ||
+    g.__env__?.ticker_tracker_kv ||
+    g.env?.KV ||
+    g.env?.ticker_tracker_kv ||
+    null
+  );
 }
 
 export async function kvGet<T = any>(key: string): Promise<T | null> {

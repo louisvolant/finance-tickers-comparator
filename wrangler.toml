@@ -9,9 +9,12 @@ directory = ".open-next/assets"
 binding = "ASSETS"
 
 [[kv_namespaces]]
-binding = "TICKER_TRACKER_KV"
-id = "ticker_tracker_kv_prod_id"
-preview_id = "ticker_tracker_kv_preview_id"
+binding = "KV"
+id = "d6b4aa8e710d442d97e6c52b1027f92c"
+
+[[kv_namespaces]]
+binding = "ticker_tracker_kv"
+id = "d6b4aa8e710d442d97e6c52b1027f92c"
 
 [observability.logs]
 enabled = true

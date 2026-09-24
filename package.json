@@ -5,12 +5,15 @@
   "description": "Real-time stock valuation and ticker tracker with Yahoo Finance, P/E metrics, offline IndexedDB cache, PWA and Cloudflare Workers support.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "opennextjs-cloudflare build",
+    "build:next": "next build",
     "build:worker": "opennextjs-cloudflare build",
-    "deploy": "npm run build:worker && wrangler deploy",
+    "deploy": "opennextjs-cloudflare build && wrangler deploy",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsx --test tests/*.test.ts"
+    "test:unit": "tsx --test tests/*.test.ts",
+    "test:e2e": "playwright test",
+    "test": "npm run test:unit"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.0.0",
@@ -26,6 +29,7 @@
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.20.6",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^22.13.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
