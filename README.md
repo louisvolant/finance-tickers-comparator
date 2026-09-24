@@ -44,3 +44,31 @@ For Cloudflare Workers deployment:
 ```bash
 npm run deploy
 ```
+
+---
+
+## Architecture & KV Caching
+
+Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expiration. To provide reliable performance and stay within free tier limits, Ticker-Tracker uses a multi-tier fallback architecture:
+
+1. **Cloudflare KV / Local Store Cache**:
+   - Live Quotes: cached for 90 seconds.
+   - Autocomplete & Search: cached for 1 hour.
+   - Historical Chart & Stats: cached for 10 minutes.
+2. **Multi-Tier Fetching Engine**:
+   - **Tier 1**: `yf.quote()` for real-time market metrics.
+   - **Tier 2**: `yf.quoteSummary()` for fundamental valuation modules (`summaryDetail`, `defaultKeyStatistics`, `price`).
+   - **Tier 3**: Direct Yahoo Finance Chart API (`query1.finance.yahoo.com/v8/finance/chart`) with browser headers (no crumb required).
+   - **Tier 4**: Graceful stale-cache recovery if network requests are degraded.
+
+## API Endpoints
+
+- `GET /api/tickers/search?q={query}`: Search and autocomplete tickers across global exchanges.
+- `GET /api/tickers/quote?symbols={AAPL,MC.PA,...}`: Fetch single or batch quotes with valuation multiples.
+- `GET /api/tickers/details?symbol={symbol}&range={1mo}`: Retrieve historical chart time series and detailed statistics.
+
+## Running Tests
+
+```bash
+npm test
+```
