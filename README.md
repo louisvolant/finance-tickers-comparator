@@ -68,6 +68,13 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
 - `GET /api/tickers/quote?symbols={AAPL,MC.PA,...}`: Fetch single or batch quotes with valuation multiples.
 - `GET /api/tickers/details?symbol={symbol}&range={1mo}`: Retrieve historical chart time series and detailed statistics.
 
+### Watchlist Management
+- `GET /api/tickers`: Retrieve authenticated user's tickers enriched with quotes.
+- `POST /api/tickers`: Add a ticker with tracking value baseline and optional notes.
+- `PATCH /api/tickers`: Update tracking value or notes for a ticker.
+- `DELETE /api/tickers?id={id}`: Remove a ticker and auto-compact order indices.
+- `POST /api/tickers/reorder`: Persist custom ordering sequence of tickers.
+
 ### Authentication & Sessions
 - `POST /api/auth/register`: Create user account with PBKDF2 password encryption.
 - `POST /api/auth/login`: Authenticate email/password credentials and set HTTP-only signed session cookie.
