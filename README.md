@@ -63,9 +63,18 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
 
 ## API Endpoints
 
+### Market & Tickers
 - `GET /api/tickers/search?q={query}`: Search and autocomplete tickers across global exchanges.
 - `GET /api/tickers/quote?symbols={AAPL,MC.PA,...}`: Fetch single or batch quotes with valuation multiples.
 - `GET /api/tickers/details?symbol={symbol}&range={1mo}`: Retrieve historical chart time series and detailed statistics.
+
+### Authentication & Sessions
+- `POST /api/auth/register`: Create user account with PBKDF2 password encryption.
+- `POST /api/auth/login`: Authenticate email/password credentials and set HTTP-only signed session cookie.
+- `POST /api/auth/logout`: Invalidate session cookie.
+- `GET /api/auth/me`: Verify session and retrieve current user profile.
+- `GET /api/auth/google`: Trigger Google OAuth2 consent flow.
+- `GET /api/auth/callback/google`: Handle OAuth redirect, profile sync, and session issuing.
 
 ## Running Tests
 
