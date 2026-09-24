@@ -8,9 +8,10 @@ interface NavbarProps {
   onAddTickerClick: () => void;
   onRefreshClick: () => void;
   refreshing: boolean;
+  onOpenSettings?: () => void;
 }
 
-export function Navbar({ onAddTickerClick, onRefreshClick, refreshing }: NavbarProps) {
+export function Navbar({ onAddTickerClick, onRefreshClick, refreshing, onOpenSettings }: NavbarProps) {
   const { user, loading, openAuthModal, logout } = useAuth();
 
   return (
@@ -62,15 +63,24 @@ export function Navbar({ onAddTickerClick, onRefreshClick, refreshing }: NavbarP
           {!loading && (
             <>
               {user ? (
-                <div className="flex items-center gap-2 pl-1 sm:pl-2 border-l border-slate-800">
-                  <div className="hidden sm:flex flex-col text-right">
-                    <span className="text-xs font-medium text-slate-200 leading-none">
-                      {user.username}
-                    </span>
-                    <span className="text-[10px] text-slate-500 leading-tight mt-0.5 truncate max-w-[120px]">
-                      {user.email}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 border-l border-slate-800">
+                  <button
+                    onClick={onOpenSettings}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-left transition cursor-pointer"
+                    title="Account settings"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">
+                      {user.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="hidden sm:flex flex-col">
+                      <span className="text-xs font-semibold text-slate-200 leading-none">
+                        {user.username}
+                      </span>
+                      <span className="text-[10px] text-slate-500 leading-tight mt-0.5 truncate max-w-[100px]">
+                        {user.email}
+                      </span>
+                    </div>
+                  </button>
                   <button
                     onClick={logout}
                     title="Log Out"

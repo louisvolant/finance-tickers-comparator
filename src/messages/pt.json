@@ -1,0 +1,96 @@
+{
+  "app": {
+    "name": "Ticker-Tracker",
+    "tagline": "Rastreador de ações e múltiplos de avaliação em tempo real",
+    "disclaimer": "Dados de mercado via Yahoo Finance. Cotações com atraso de até 15 min. Apenas para fins informativos e de acompanhamento."
+  },
+  "nav": {
+    "refresh": "Atualizar",
+    "addTicker": "Adicionar Ticker",
+    "signIn": "Entrar",
+    "signUp": "Criar Conta",
+    "signOut": "Sair",
+    "settings": "Definições de Conta",
+    "searchPrompt": "Pesquisar ações (⌘K)"
+  },
+  "hero": {
+    "badge": "Acompanhamento instantâneo de múltiplos e P/E",
+    "title": "Acompanhe as suas ações, múltiplos e desvios de compra",
+    "sub": "Compare o preço de mercado com o seu preço médio de compra. Acompanhe o Current P/E e o Forward P/E instantaneamente no telemóvel sem esperas.",
+    "cta": "Criar Conta Grátis",
+    "googleCta": "Entrar com o Google",
+    "guestHint": "Ou teste imediatamente no Modo Convidado abaixo!"
+  },
+  "watchlist": {
+    "title": "A Minha Lista",
+    "count": "{count} tickers",
+    "hint": "Arraste ou use as setas para reordenar. Clique num ticker para ver estatísticas.",
+    "emptyTitle": "Sem tickers na sua lista",
+    "emptyBody": "Adicione a sua primeira ação ou ETF para começar a acompanhar cotações e múltiplos de avaliação.",
+    "colTicker": "Ticker e Nome",
+    "colPrice": "Preço Atual",
+    "colTracking": "Valor de Referência",
+    "colDiff": "% Dif",
+    "colCurrentPE": "Current P/E",
+    "colForwardPE": "Forward P/E",
+    "colActions": "Ações",
+    "baseline": "Valor de referência",
+    "today": "hoje",
+    "vsTarget": "vs referência"
+  },
+  "search": {
+    "title": "Adicionar Ticker",
+    "sub": "Pesquise ações dos EUA, europeias e ETFs",
+    "placeholder": "Pesquise por símbolo ou nome (ex. AAPL, MC.PA, CW8)...",
+    "popular": "Sugestões Populares",
+    "trackingLabel": "Valor de Referência (Preço Médio / Alvo)",
+    "trackingHint": "A diferença percentual será calculada com base neste valor.",
+    "notesLabel": "Notas Pessoais (Opcional)",
+    "notesPlaceholder": "ex. Compra em correção, investimento a longo prazo",
+    "addBtn": "Adicionar à Lista",
+    "change": "Alterar",
+    "alreadyTracked": "Já adicionado",
+    "back": "Voltar"
+  },
+  "details": {
+    "priceHistory": "Histórico de Preços",
+    "range52w": "Intervalo de 52 Semanas",
+    "low52w": "Mín 52S",
+    "high52w": "Máx 52S",
+    "rangeOf": "{percent}% do intervalo",
+    "marketCap": "Cap. de Mercado",
+    "dividendYield": "Rend. Dividendo",
+    "trailingEps": "EPS (12M)",
+    "beta": "Beta (Volatilidade)",
+    "volume": "Volume",
+    "avgVolume": "Volume Médio",
+    "personalNotes": "Notas Pessoais",
+    "currentPeDesc": "Múltiplo de lucros passados (TTM)",
+    "forwardPeDesc": "Múltiplo estimado para o próximo exercício"
+  },
+  "account": {
+    "title": "Definições de Conta",
+    "sub": "Gerir palavra-passe e perfil",
+    "info": "Informação do Utilizador",
+    "username": "Nome de utilizador",
+    "email": "Endereço de Email",
+    "changePassword": "Alterar Palavra-passe",
+    "currentPassword": "Palavra-passe Antiga",
+    "newPassword": "Nova Palavra-passe",
+    "confirmNewPassword": "Confirmar Nova Palavra-passe",
+    "savePassword": "Atualizar Palavra-passe",
+    "passwordUpdated": "Palavra-passe atualizada com sucesso!",
+    "dangerZone": "Zona de Perigo",
+    "deleteAccount": "Eliminar Conta",
+    "deleteWarning": "Elimina permanentemente a sua conta, lista de acompanhamento e todos os dados guardados no servidor.",
+    "deleteConfirm": "Tem a certeza de que pretende eliminar permanentemente a sua conta?",
+    "close": "Fechar"
+  },
+  "footer": {
+    "personalPage": "Personal Page",
+    "portfolio": "Portfolio",
+    "privacy": "Privacidade",
+    "terms": "Termos de Uso",
+    "home": "Início"
+  }
+}

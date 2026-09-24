@@ -1,0 +1,96 @@
+{
+  "app": {
+    "name": "Ticker-Tracker",
+    "tagline": "Rastreador de cotizaciones y múltiplos de valoración en tiempo real",
+    "disclaimer": "Datos proporcionados vía Yahoo Finance con retraso de hasta 15 min. Solo para fines informativos y de seguimiento."
+  },
+  "nav": {
+    "refresh": "Actualizar",
+    "addTicker": "Añadir ticker",
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta",
+    "signOut": "Cerrar sesión",
+    "settings": "Ajustes de cuenta",
+    "searchPrompt": "Buscar acciones (⌘K)"
+  },
+  "hero": {
+    "badge": "Seguimiento instantáneo de múltiplos y PER",
+    "title": "Sigue tus acciones, múltiplos y diferencias de compra",
+    "sub": "Compara el precio actual con tu precio de compra objetivo o coste medio. Consulta el Current P/E y Forward P/E al instante en el móvil sin esperas.",
+    "cta": "Crear cuenta gratis",
+    "googleCta": "Iniciar sesión con Google",
+    "guestHint": "¡O prueba directamente en modo invitado a continuación!"
+  },
+  "watchlist": {
+    "title": "Mi Lista de Seguimiento",
+    "count": "{count} tickers",
+    "hint": "Arrastra o usa las flechas para reordenar. Haz clic en un ticker para ver estadísticas.",
+    "emptyTitle": "No hay tickers en tu lista",
+    "emptyBody": "Añade tu primera acción o ETF para empezar a seguir cotizaciones y ratios de valoración.",
+    "colTicker": "Ticker y Nombre",
+    "colPrice": "Precio actual",
+    "colTracking": "Valor de referencia",
+    "colDiff": "% Dif",
+    "colCurrentPE": "Current P/E",
+    "colForwardPE": "Forward P/E",
+    "colActions": "Acciones",
+    "baseline": "Valor de referencia",
+    "today": "hoy",
+    "vsTarget": "vs objetivo"
+  },
+  "search": {
+    "title": "Añadir Ticker",
+    "sub": "Busca acciones de EE.UU., europeas y fondos ETF",
+    "placeholder": "Buscar símbolo o nombre (ej. AAPL, MC.PA, CW8)...",
+    "popular": "Sugerencias populares",
+    "trackingLabel": "Valor de referencia (Precio de compra / Objetivo)",
+    "trackingHint": "La diferencia porcentual se calculará respecto a este valor.",
+    "notesLabel": "Notas personales (Opcional)",
+    "notesPlaceholder": "ej. Comprado en corrección, DCA a largo plazo",
+    "addBtn": "Añadir a la lista",
+    "change": "Cambiar",
+    "alreadyTracked": "Ya registrado",
+    "back": "Volver"
+  },
+  "details": {
+    "priceHistory": "Historial de precios",
+    "range52w": "Rango de 52 semanas",
+    "low52w": "Mín 52S",
+    "high52w": "Máx 52S",
+    "rangeOf": "{percent}% del rango",
+    "marketCap": "Cap. Bursátil",
+    "dividendYield": "Rent. Dividendo",
+    "trailingEps": "BPA (12 meses)",
+    "beta": "Beta (Volatilidad)",
+    "volume": "Volumen",
+    "avgVolume": "Volumen Medio",
+    "personalNotes": "Notas Personales",
+    "currentPeDesc": "Múltiplo PER histórico (TTM)",
+    "forwardPeDesc": "Múltiplo PER estimado próximo ejercicio"
+  },
+  "account": {
+    "title": "Ajustes de Cuenta",
+    "sub": "Gestiona tu contraseña y perfil",
+    "info": "Información de Usuario",
+    "username": "Nombre de usuario",
+    "email": "Correo electrónico",
+    "changePassword": "Cambiar contraseña",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "confirmNewPassword": "Confirmar nueva contraseña",
+    "savePassword": "Guardar contraseña",
+    "passwordUpdated": "¡Contraseña actualizada con éxito!",
+    "dangerZone": "Zona de Peligro",
+    "deleteAccount": "Eliminar cuenta",
+    "deleteWarning": "Elimina permanentemente tu cuenta y lista de seguimiento. Esta acción no se puede deshacer.",
+    "deleteConfirm": "¿Estás seguro de que deseas eliminar permanentemente tu cuenta?",
+    "close": "Cerrar"
+  },
+  "footer": {
+    "personalPage": "Personal Page",
+    "portfolio": "Portfolio",
+    "privacy": "Privacidad",
+    "terms": "Términos de uso",
+    "home": "Inicio"
+  }
+}

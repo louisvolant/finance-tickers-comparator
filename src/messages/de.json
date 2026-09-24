@@ -1,0 +1,96 @@
+{
+  "app": {
+    "name": "Ticker-Tracker",
+    "tagline": "Echtzeit-Aktienbewertungs- und KGV-Tracker",
+    "disclaimer": "Marktdaten über Yahoo Finance bereitgestellt. Kurse können bis zu 15 Min. verzögert sein. Nur zu Informations- und Nachverfolgungszwecken."
+  },
+  "nav": {
+    "refresh": "Aktualisieren",
+    "addTicker": "Ticker hinzufügen",
+    "signIn": "Anmelden",
+    "signUp": "Konto erstellen",
+    "signOut": "Abmelden",
+    "settings": "Kontoeinstellungen",
+    "searchPrompt": "Aktien suchen (⌘K)"
+  },
+  "hero": {
+    "badge": "Sofortige Bewertungs- und KGV-Verfolgung",
+    "title": "Verfolgen Sie Aktien, Multiplikatoren & Kaufpreisdifferenzen",
+    "sub": "Vergleichen Sie aktuelle Marktpreise mit Ihrem persönlichen Richtwert. Überwachen Sie Current P/E und Forward P/E mit sofortigem Offline-Zugriff auf dem Smartphone.",
+    "cta": "Kostenloses Konto erstellen",
+    "googleCta": "Google-Anmeldung",
+    "guestHint": "Oder testen Sie sofort im Gastmodus unten!"
+  },
+  "watchlist": {
+    "title": "Meine Watchlist",
+    "count": "{count} Ticker",
+    "hint": "Ziehen oder Pfeile nutzen, um neu zu ordnen. Tippen Sie auf einen Ticker für Statistiken.",
+    "emptyTitle": "Keine Ticker in Ihrer Watchlist",
+    "emptyBody": "Fügen Sie Ihre erste Aktie oder Ihren ersten ETF hinzu, um Kurse, KGV-Multiplikatoren und Abweichungen zu verfolgen.",
+    "colTicker": "Ticker & Name",
+    "colPrice": "Aktueller Kurs",
+    "colTracking": "Referenzwert",
+    "colDiff": "% Diff",
+    "colCurrentPE": "Aktuelles KGV",
+    "colForwardPE": "Forward KGV",
+    "colActions": "Aktionen",
+    "baseline": "Referenzwert",
+    "today": "heute",
+    "vsTarget": "vs Referenz"
+  },
+  "search": {
+    "title": "Ticker hinzufügen",
+    "sub": "Suchen Sie nach US-Aktien, europäischen Titeln und ETFs",
+    "placeholder": "Symbol oder Namen suchen (z. B. AAPL, MC.PA, CW8)...",
+    "popular": "Beliebte Vorschläge",
+    "trackingLabel": "Referenzwert (Kaufpreis / Zielwert)",
+    "trackingHint": "Die prozentuale Differenz wird anhand dieses Wertes berechnet.",
+    "notesLabel": "Notizen (Optional)",
+    "notesPlaceholder": "z. B. Nachkauf im Dip, langfristiger Sparplan",
+    "addBtn": "Zur Watchlist hinzufügen",
+    "change": "Ändern",
+    "alreadyTracked": "Bereits verfolgt",
+    "back": "Zurück"
+  },
+  "details": {
+    "priceHistory": "Kursverlauf",
+    "range52w": "52-Wochen-Spanne",
+    "low52w": "52W Tief",
+    "high52w": "52W Hoch",
+    "rangeOf": "{percent}% der Spanne",
+    "marketCap": "Marktkapitalisierung",
+    "dividendYield": "Dividendenrendite",
+    "trailingEps": "EPS (12M)",
+    "beta": "Beta (Volatilität)",
+    "volume": "Volumen",
+    "avgVolume": "Durchschnittsvolumen",
+    "personalNotes": "Persönliche Notizen",
+    "currentPeDesc": "Historisches KGV (TTM)",
+    "forwardPeDesc": "Erwartetes KGV (nächstes GJ)"
+  },
+  "account": {
+    "title": "Kontoeinstellungen",
+    "sub": "Sicherheitsdaten und Profil verwalten",
+    "info": "Benutzerinformationen",
+    "username": "Benutzername",
+    "email": "E-Mail-Adresse",
+    "changePassword": "Passwort ändern",
+    "currentPassword": "Altes Passwort",
+    "newPassword": "Neues Passwort",
+    "confirmNewPassword": "Neues Passwort bestätigen",
+    "savePassword": "Passwort speichern",
+    "passwordUpdated": "Passwort erfolgreich aktualisiert!",
+    "dangerZone": "Gefahrenzone",
+    "deleteAccount": "Konto löschen",
+    "deleteWarning": "Löscht Ihr Konto, Ihre Watchlist und alle Daten unwiderruflich.",
+    "deleteConfirm": "Möchten Sie Ihr Konto wirklich endgültig löschen?",
+    "close": "Schließen"
+  },
+  "footer": {
+    "personalPage": "Personal Page",
+    "portfolio": "Portfolio",
+    "privacy": "Datenschutz",
+    "terms": "Nutzungsbedingungen",
+    "home": "Startseite"
+  }
+}

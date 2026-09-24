@@ -1,0 +1,96 @@
+{
+  "app": {
+    "name": "Ticker-Tracker",
+    "tagline": "Monitoraggio in tempo reale delle quotazioni e dei multipli P/E",
+    "disclaimer": "Dati di mercato forniti via Yahoo Finance. Quotazioni differite fino a 15 min. Solo a scopo informativo."
+  },
+  "nav": {
+    "refresh": "Aggiorna",
+    "addTicker": "Aggiungi Ticker",
+    "signIn": "Accedi",
+    "signUp": "Crea Account",
+    "signOut": "Disconnetti",
+    "settings": "Impostazioni Account",
+    "searchPrompt": "Cerca azioni (⌘K)"
+  },
+  "hero": {
+    "badge": "Monitoraggio istantaneo dei multipli di valutazione",
+    "title": "Monitora azioni, multipli e scostamenti dal prezzo d'acquisto",
+    "sub": "Confronta il prezzo di mercato con il tuo target d'acquisto medio. Tieni d'occhio Current P/E e Forward P/E istantaneamente da mobile.",
+    "cta": "Crea account gratuito",
+    "googleCta": "Accedi con Google",
+    "guestHint": "Oppure prova subito in modalità ospite qui sotto!"
+  },
+  "watchlist": {
+    "title": "La mia Watchlist",
+    "count": "{count} ticker",
+    "hint": "Trascina o usa le frecce per riordinare. Clicca su un ticker per le statistiche.",
+    "emptyTitle": "Nessun ticker nella watchlist",
+    "emptyBody": "Aggiungi la tua prima azione o ETF per iniziare il monitoraggio.",
+    "colTicker": "Ticker e Nome",
+    "colPrice": "Prezzo Attuale",
+    "colTracking": "Valore Target",
+    "colDiff": "% Diff",
+    "colCurrentPE": "Current P/E",
+    "colForwardPE": "Forward P/E",
+    "colActions": "Azioni",
+    "baseline": "Valore target",
+    "today": "oggi",
+    "vsTarget": "vs target"
+  },
+  "search": {
+    "title": "Aggiungi Ticker",
+    "sub": "Cerca titoli USA, europei ed ETF",
+    "placeholder": "Cerca simbolo o nome (es. AAPL, MC.PA, CW8)...",
+    "popular": "Suggerimenti popolari",
+    "trackingLabel": "Valore di riferimento (Prezzo d'acquisto / Obiettivo)",
+    "trackingHint": "La differenza in percentuale sarà calcolata rispetto a questo valore.",
+    "notesLabel": "Note personali (Opzionale)",
+    "notesPlaceholder": "es. Acquisto sui minimi, DCA a lungo termine",
+    "addBtn": "Aggiungi alla Watchlist",
+    "change": "Modifica",
+    "alreadyTracked": "Già presente",
+    "back": "Indietro"
+  },
+  "details": {
+    "priceHistory": "Cronologia Prezzi",
+    "range52w": "Intervallo 52 Settimane",
+    "low52w": "Min 52S",
+    "high52w": "Max 52S",
+    "rangeOf": "{percent}% dell'intervallo",
+    "marketCap": "Cap. di Mercato",
+    "dividendYield": "Rendimento Dividendo",
+    "trailingEps": "EPS (12 mesi)",
+    "beta": "Beta (Volatilità)",
+    "volume": "Volume",
+    "avgVolume": "Volume Medio",
+    "personalNotes": "Note Personali",
+    "currentPeDesc": "Multiplo utili passati (TTM)",
+    "forwardPeDesc": "Multiplo utili stimati prossimo esercizio"
+  },
+  "account": {
+    "title": "Impostazioni Account",
+    "sub": "Gestisci la password e il profilo",
+    "info": "Informazioni Utente",
+    "username": "Nome utente",
+    "email": "Indirizzo Email",
+    "changePassword": "Cambia Password",
+    "currentPassword": "Vecchia Password",
+    "newPassword": "Nuova Password",
+    "confirmNewPassword": "Conferma Nuova Password",
+    "savePassword": "Salva Password",
+    "passwordUpdated": "Password aggiornata con successo!",
+    "dangerZone": "Zona Pericolosa",
+    "deleteAccount": "Elimina Account",
+    "deleteWarning": "Elimina definitivamente il tuo account e tutti i dati memorizzati sul server.",
+    "deleteConfirm": "Sei sicuro di voler eliminare definitivamente il tuo account?",
+    "close": "Chiudi"
+  },
+  "footer": {
+    "personalPage": "Personal Page",
+    "portfolio": "Portfolio",
+    "privacy": "Privacy",
+    "terms": "Termini di servizio",
+    "home": "Home"
+  }
+}

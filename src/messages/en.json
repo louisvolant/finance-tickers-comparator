@@ -1,0 +1,96 @@
+{
+  "app": {
+    "name": "Ticker-Tracker",
+    "tagline": "Real-time stock valuation & multiples tracker",
+    "disclaimer": "Market data provided via Yahoo Finance. Quotes may be delayed up to 15 min. For informational and tracking purposes only."
+  },
+  "nav": {
+    "refresh": "Refresh",
+    "addTicker": "Add Ticker",
+    "signIn": "Sign In",
+    "signUp": "Create Account",
+    "signOut": "Sign Out",
+    "settings": "Account Settings",
+    "searchPrompt": "Search stocks (⌘K)"
+  },
+  "hero": {
+    "badge": "Instant Valuation & Multiples Tracking",
+    "title": "Track Stocks, Multiples & Purchase Variance",
+    "sub": "Compare current market prices against your personal tracking target. Monitor Current P/E and Forward P/E with zero-latency offline mobile access.",
+    "cta": "Create Free Account",
+    "googleCta": "Google Login",
+    "guestHint": "Or test right away in Guest Mode below!"
+  },
+  "watchlist": {
+    "title": "My Watchlist",
+    "count": "{count} tickers",
+    "hint": "Drag or use arrows to reorder. Tap any ticker to view charts and statistics.",
+    "emptyTitle": "No Tickers in Your Watchlist",
+    "emptyBody": "Add your first stock or ETF to start tracking current prices, valuation multiples, and target percentage variances.",
+    "colTicker": "Ticker & Name",
+    "colPrice": "Current Price",
+    "colTracking": "Tracking Value",
+    "colDiff": "% Diff",
+    "colCurrentPE": "Current P/E",
+    "colForwardPE": "Forward P/E",
+    "colActions": "Actions",
+    "baseline": "Baseline target",
+    "today": "today",
+    "vsTarget": "vs target"
+  },
+  "search": {
+    "title": "Add Stock Ticker",
+    "sub": "Search US stocks, European equities, and ETFs",
+    "placeholder": "Search symbol or name (e.g. AAPL, MC.PA, CW8)...",
+    "popular": "Popular Suggestions",
+    "trackingLabel": "Tracking Value (Baseline / Cost Basis / Target Buy Price)",
+    "trackingHint": "The % difference shown on your dashboard will be computed against this baseline value.",
+    "notesLabel": "Notes (Optional)",
+    "notesPlaceholder": "e.g. Bought on dip, long term DCA",
+    "addBtn": "Add to Watchlist",
+    "change": "Change",
+    "alreadyTracked": "Already tracked",
+    "back": "Back"
+  },
+  "details": {
+    "priceHistory": "Price History",
+    "range52w": "52-Week Range",
+    "low52w": "52W Low",
+    "high52w": "52W High",
+    "rangeOf": "{percent}% of range",
+    "marketCap": "Market Cap",
+    "dividendYield": "Dividend Yield",
+    "trailingEps": "Trailing EPS",
+    "beta": "Beta (Volatility)",
+    "volume": "Volume",
+    "avgVolume": "Average Volume",
+    "personalNotes": "Personal Notes",
+    "currentPeDesc": "TTM earnings multiple",
+    "forwardPeDesc": "Estimated next FY"
+  },
+  "account": {
+    "title": "Account Settings",
+    "sub": "Manage your security credentials and profile",
+    "info": "User Information",
+    "username": "Username",
+    "email": "Email Address",
+    "changePassword": "Change Password",
+    "currentPassword": "Old Password",
+    "newPassword": "New Password",
+    "confirmNewPassword": "Confirm New Password",
+    "savePassword": "Update Password",
+    "passwordUpdated": "Password updated successfully!",
+    "dangerZone": "Danger Zone",
+    "deleteAccount": "Delete Account",
+    "deleteWarning": "Permanently deletes your account, personal watchlist, and all cached data from the server. This action cannot be undone.",
+    "deleteConfirm": "Are you sure you want to permanently delete your account?",
+    "close": "Close"
+  },
+  "footer": {
+    "personalPage": "Personal Page",
+    "portfolio": "Portfolio",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "home": "Home"
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "app": {
+    "name": "Ticker-Tracker",
+    "tagline": "Suivi des valorisations boursières et multiples de valorisation en temps réel",
+    "disclaimer": "Données de marché fournies via Yahoo Finance. Cours pouvant être différés jusqu'à 15 min. À des fins d'information et de suivi personnel."
+  },
+  "nav": {
+    "refresh": "Actualiser",
+    "addTicker": "Ajouter un ticker",
+    "signIn": "Connexion",
+    "signUp": "Créer un compte",
+    "signOut": "Déconnexion",
+    "settings": "Paramètres du compte",
+    "searchPrompt": "Rechercher des actions (⌘K)"
+  },
+  "hero": {
+    "badge": "Suivi instantané des valorisations et ratios P/E",
+    "title": "Suivez vos actions, vos multiples et écarts d'achat",
+    "sub": "Comparez le cours actuel avec votre valeur cible ou prix d'achat moyen. Surveillez le Current P/E et le Forward P/E avec un accès instantané hors-ligne sur mobile.",
+    "cta": "Créer un compte gratuit",
+    "googleCta": "Connexion Google",
+    "guestHint": "Ou essayez directement en mode invité ci-dessous !"
+  },
+  "watchlist": {
+    "title": "Ma Watchlist",
+    "count": "{count} tickers",
+    "hint": "Glissez ou utilisez les flèches pour réordonner. Cliquez sur un ticker pour voir ses statistiques.",
+    "emptyTitle": "Aucun ticker dans votre watchlist",
+    "emptyBody": "Ajoutez votre première action ou ETF pour commencer à suivre les cours, les multiples P/E et les écarts de valeur.",
+    "colTicker": "Ticker & Nom",
+    "colPrice": "Cours actuel",
+    "colTracking": "Valeur de référence",
+    "colDiff": "% Écart",
+    "colCurrentPE": "Current P/E",
+    "colForwardPE": "Forward P/E",
+    "colActions": "Actions",
+    "baseline": "Valeur de référence",
+    "today": "aujourd'hui",
+    "vsTarget": "vs référence"
+  },
+  "search": {
+    "title": "Ajouter un ticker",
+    "sub": "Recherchez des actions américaines, européennes et des ETF",
+    "placeholder": "Recherchez par symbole ou nom (ex. AAPL, MC.PA, CW8)...",
+    "popular": "Suggestions populaires",
+    "trackingLabel": "Valeur de référence (Prix d'achat moyen / Valeur cible)",
+    "trackingHint": "L'écart en pourcentage sur votre tableau de bord sera calculé par rapport à cette valeur.",
+    "notesLabel": "Notes personnelles (Optionnel)",
+    "notesPlaceholder": "ex. Achat sur repli, DCA long terme",
+    "addBtn": "Ajouter à la watchlist",
+    "change": "Modifier",
+    "alreadyTracked": "Déjà suivi",
+    "back": "Retour"
+  },
+  "details": {
+    "priceHistory": "Historique des cours",
+    "range52w": "Fourchette 52 semaines",
+    "low52w": "Plus bas 52S",
+    "high52w": "Plus haut 52S",
+    "rangeOf": "{percent}% de la fourchette",
+    "marketCap": "Capitalisation",
+    "dividendYield": "Rendement dividende",
+    "trailingEps": "BPA (12 mois)",
+    "beta": "Bêta (Volatilité)",
+    "volume": "Volume",
+    "avgVolume": "Volume moyen",
+    "personalNotes": "Notes personnelles",
+    "currentPeDesc": "Multiple des bénéfices passés",
+    "forwardPeDesc": "Multiple anticipé prochain exercice"
+  },
+  "account": {
+    "title": "Paramètres du compte",
+    "sub": "Gérez vos identifiants de sécurité et votre profil",
+    "info": "Informations utilisateur",
+    "username": "Nom d'utilisateur",
+    "email": "Adresse e-mail",
+    "changePassword": "Changer de mot de passe",
+    "currentPassword": "Ancien mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "confirmNewPassword": "Confirmer le nouveau mot de passe",
+    "savePassword": "Mettre à jour le mot de passe",
+    "passwordUpdated": "Mot de passe mis à jour avec succès !",
+    "dangerZone": "Zone dangereuse",
+    "deleteAccount": "Supprimer mon compte",
+    "deleteWarning": "Supprime définitivement votre compte, votre watchlist personnelle et toutes les données en cache sur le serveur. Cette action est irréversible.",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer définitivement votre compte ?",
+    "close": "Fermer"
+  },
+  "footer": {
+    "personalPage": "Personal Page",
+    "portfolio": "Portfolio",
+    "privacy": "Confidentialité",
+    "terms": "Conditions d'utilisation",
+    "home": "Accueil"
+  }
+}

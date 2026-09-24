@@ -218,8 +218,11 @@ export async function getBatchQuotes(symbols: string[]): Promise<Record<string, 
   return results;
 }
 
+import { searchCatalog } from './stockCatalog';
+
 /**
- * Autocomplete / Search tickers via Yahoo Finance.
+ * Autocomplete / Search tickers via Curated Catalog & Yahoo Finance.
+ * Supports search by ticker symbol, company label / name, or ISIN code.
  */
 export async function searchTickers(query: string): Promise<TickerSearchResult[]> {
   const cleanQuery = query.trim().toLowerCase();
@@ -229,13 +232,17 @@ export async function searchTickers(query: string): Promise<TickerSearchResult[]
   const cached = await kvGet<TickerSearchResult[]>(cacheKey);
   if (cached) return cached;
 
+  // 1. Check curated catalog for ticker, label, or ISIN match
+  const catalogMatches = searchCatalog(query);
+  const seenSymbols = new Set(catalogMatches.map((m) => m.symbol.toUpperCase()));
+
   try {
     const res = await yf.search(cleanQuery, {
       newsCount: 0,
       quotesCount: 8,
     });
 
-    const items = (res.quotes || [])
+    const yahooItems = (res.quotes || [])
       .filter((q: any) => q.isYahooFinance && q.symbol)
       .map((q: any) => ({
         symbol: q.symbol,
@@ -244,13 +251,15 @@ export async function searchTickers(query: string): Promise<TickerSearchResult[]
         quoteType: q.quoteType || q.typeDisp || 'EQUITY',
         sector: q.sector || '',
         industry: q.industry || '',
-      }));
+      }))
+      .filter((item: TickerSearchResult) => !seenSymbols.has(item.symbol.toUpperCase()));
 
-    await kvPut(cacheKey, items, { expirationTtl: SEARCH_CACHE_TTL_SEC });
-    return items;
+    const combined = [...catalogMatches, ...yahooItems];
+    await kvPut(cacheKey, combined, { expirationTtl: SEARCH_CACHE_TTL_SEC });
+    return combined;
   } catch (err) {
     console.error(`Search error for "${cleanQuery}":`, err);
-    return [];
+    return catalogMatches;
   }
 }
 
