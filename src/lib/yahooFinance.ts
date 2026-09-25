@@ -1,6 +1,6 @@
 import YahooFinance from 'yahoo-finance2';
 import { kvGet, kvPut } from './kv';
-import { TickerQuote, TickerSearchResult, ChartPoint, TickerDetails } from './types';
+import { TickerQuote, TickerSearchResult, ChartPoint, TickerDetails, ForwardConsensusData, EarningsEstimatePeriod } from './types';
 
 // Instantiate YahooFinance client suppressing survey notice
 const yf = new YahooFinance({
@@ -367,9 +367,82 @@ export async function getTickerDetails(
       }
     }
 
+    // Fetch consensus earnings estimates & forward multiples
+    let forwardConsensus: ForwardConsensusData | undefined = undefined;
+    try {
+      const summary = await yf.quoteSummary(cleanSymbol, {
+        modules: ['earningsTrend', 'defaultKeyStatistics'],
+      });
+
+      const forwardEps = summary?.defaultKeyStatistics?.forwardEps ?? null;
+      const trends = summary?.earningsTrend?.trend || [];
+      const currentPrice = quote.price;
+
+      const estimates: EarningsEstimatePeriod[] = [];
+
+      for (const t of trends) {
+        if (!t.period) continue;
+        const est = t.earningsEstimate;
+        if (!est || est.avg === null || est.avg === undefined) continue;
+
+        let periodLabel = t.period;
+        let year: number | undefined = undefined;
+        if (t.endDate) {
+          const d = new Date(t.endDate);
+          year = d.getFullYear();
+        }
+
+        if (t.period === '0y') {
+          periodLabel = year ? `FY ${year} (Current FY0)` : 'Current Year (FY0)';
+        } else if (t.period === '+1y') {
+          periodLabel = year ? `FY ${year} (Next FY1)` : 'Next Year (FY+1)';
+        } else if (t.period === '0q') {
+          periodLabel = 'Current Quarter (Q0)';
+        } else if (t.period === '+1q') {
+          periodLabel = 'Next Quarter (Q+1)';
+        }
+
+        const avgEps = est.avg !== null && est.avg !== undefined ? Number(est.avg.toFixed(2)) : null;
+        const lowEps = est.low !== null && est.low !== undefined ? Number(est.low.toFixed(2)) : null;
+        const highEps = est.high !== null && est.high !== undefined ? Number(est.high.toFixed(2)) : null;
+        const impliedForwardPE =
+          avgEps && avgEps > 0 && currentPrice > 0 ? Number((currentPrice / avgEps).toFixed(2)) : null;
+
+        estimates.push({
+          period: t.period,
+          periodLabel,
+          endDate: t.endDate ? new Date(t.endDate).toISOString().split('T')[0] : undefined,
+          year,
+          avgEps,
+          lowEps,
+          highEps,
+          numberOfAnalysts: est.numberOfAnalysts ?? null,
+          growth: est.growth !== null && est.growth !== undefined ? Number((est.growth * 100).toFixed(1)) : null,
+          currency: est.earningsCurrency || quote.currency || 'USD',
+          impliedForwardPE,
+          upRevisions30d: t.epsRevisions?.upLast30days ?? null,
+          downRevisions30d: t.epsRevisions?.downLast30days ?? null,
+        });
+      }
+
+      if (estimates.length > 0 || forwardEps !== null) {
+        forwardConsensus = {
+          forwardEps: forwardEps !== null ? Number(forwardEps.toFixed(2)) : null,
+          forwardPE: quote.forwardPE,
+          primaryHorizon: 'Next Fiscal Year (FY+1)',
+          sourceDescription:
+            'Consensus aggregated from sell-side equity research analysts (Goldman Sachs, Morgan Stanley, JPMorgan, BNP Paribas, Kepler Cheuvreux, etc.) compiled by Refinitiv/LSEG and S&P Global.',
+          estimates,
+        };
+      }
+    } catch (summaryErr) {
+      console.warn(`Summary modules fetch warning for ${cleanSymbol}:`, summaryErr);
+    }
+
     const details: TickerDetails = {
       quote,
       chart: chartPoints,
+      forwardConsensus,
     };
 
     await kvPut(cacheKey, details, { expirationTtl: CHART_CACHE_TTL_SEC });

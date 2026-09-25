@@ -50,6 +50,30 @@ export interface ChartPoint {
   volume?: number;
 }
 
+export interface EarningsEstimatePeriod {
+  period: string; // e.g. "0y", "+1y", "0q", "+1q"
+  periodLabel: string; // e.g. "Fiscal Year 2026 (FY0)", "Fiscal Year 2027 (FY+1)"
+  endDate?: string;
+  year?: number;
+  avgEps: number | null;
+  lowEps: number | null;
+  highEps: number | null;
+  numberOfAnalysts: number | null;
+  growth: number | null;
+  currency?: string;
+  impliedForwardPE: number | null;
+  upRevisions30d?: number | null;
+  downRevisions30d?: number | null;
+}
+
+export interface ForwardConsensusData {
+  forwardEps: number | null;
+  forwardPE: number | null;
+  primaryHorizon: string;
+  sourceDescription: string;
+  estimates: EarningsEstimatePeriod[];
+}
+
 export interface TickerDetails {
   quote: TickerQuote;
   chart: ChartPoint[];
@@ -59,6 +83,7 @@ export interface TickerDetails {
     industry?: string;
     website?: string;
   };
+  forwardConsensus?: ForwardConsensusData;
 }
 
 export interface UserRecord {

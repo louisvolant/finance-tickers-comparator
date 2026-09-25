@@ -358,24 +358,18 @@ function Dashboard() {
                   {t('hero.guestHint')}
                 </span>
               </div>
+
+              {/* Zero-tracking reassurance inside guest banner */}
+              <div className="mt-4 pt-3.5 border-t border-slate-800/80 flex items-start gap-2.5 text-xs text-slate-300">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold text-emerald-400">{t('hero.privacyBadge')} : </span>
+                  <span className="text-slate-300">{t('hero.privacyText')}</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
-
-        {/* Zero User Tracking & Privacy Clarification Banner */}
-        <div className="mb-6 rounded-xl bg-slate-900/60 border border-emerald-500/20 p-3.5 sm:p-4 flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0 mt-0.5">
-            <ShieldCheck className="w-4 h-4" />
-          </div>
-          <div className="text-xs">
-            <span className="font-semibold text-emerald-400 block mb-0.5">
-              {t('hero.privacyBadge')}
-            </span>
-            <p className="text-slate-300 leading-relaxed">
-              {t('hero.privacyText')}
-            </p>
-          </div>
-        </div>
 
         {/* Dashboard Title & Quick Search Bar */}
         <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
@@ -463,6 +457,15 @@ function Dashboard() {
                 />
               ))}
             </div>
+
+            {/* Discreet Zero User Tracking Footnote at the bottom of the tickers list */}
+            <div className="mt-4 rounded-xl bg-slate-900/40 border border-slate-800/80 p-3 flex items-center gap-2.5 text-xs text-slate-400">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <p className="leading-relaxed">
+                <span className="font-semibold text-slate-300">{t('hero.privacyBadge')} : </span>
+                {t('hero.privacyText')}
+              </p>
+            </div>
           </div>
         ) : (
           /* Empty State */
@@ -481,6 +484,15 @@ function Dashboard() {
               <Plus className="w-4 h-4" />
               <span>{t('watchlist.emptyAddBtn')}</span>
             </button>
+
+            {/* Zero User Tracking Reassurance before adding first tickers */}
+            <div className="mt-6 max-w-lg mx-auto rounded-xl bg-slate-900/80 border border-emerald-500/20 p-3.5 text-left flex items-start gap-2.5 text-xs text-slate-300">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold text-emerald-400 block mb-0.5">{t('hero.privacyBadge')}</span>
+                <p className="text-slate-400 leading-relaxed">{t('hero.privacyText')}</p>
+              </div>
+            </div>
           </div>
         )}
 
