@@ -20,7 +20,11 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
 - **Progressive Web App (PWA)**: Installable on iOS, Android, and Desktop with offline caching via Service Worker and web app manifest.
 - **Multimodal Search (Ticker, Label & ISIN)**: Search stocks by symbol (e.g. `PUST`, `WPEA`), company name / ETF label (e.g. `LVMH`, `AIRBUS`, `SCHNEIDER`), or official ISIN codes (e.g. `FR0011871110`, `FR001400Q9V2`), supplemented by live Yahoo Finance search.
 - **Interactive Financial Stats & Charts**: Detailed modal with historical price trends, 52-week ranges, dividend yields, EPS, market capitalization, and beta.
-- **Ticker Reordering**: Organize your watchlist with drag-and-drop on mobile/desktop as well as explicit reorder buttons (up/down/move to top/bottom) in the expanded card view, persisted both locally and in Cloudflare KV.
+- **Flexible Display & Sorting Modes (Custom, Alphabetical, By Trading Exchange)**: Switch seamlessly with a dropdown button stacked right beside the search bar and `+` button:
+  - **Custom Order (Liste ordonnée)**: Manual / drag-and-drop reordered sequence saved to IndexedDB and Cloudflare KV.
+  - **Alphabetical (A → Z)**: Global alphabetical sorting by ticker symbol.
+  - **By Trading Market (Par place de cotation)**: Intelligently groups tickers by exchange system (`Euronext Paris`, `NASDAQ`, `NYSE`, `Deutsche Börse XETRA`, `London Stock Exchange`, etc.) with stylish header badges, and sorts tickers alphabetically inside each exchange.
+  - Choice is remembered locally across browser sessions.
 - **Account Lifecycle & Security**: Registration, login, Google OAuth 2.0 integration, password updates (`/api/auth/changepassword`), and complete account deletion (`/api/auth/delete_my_account`).
 - **Multilingual Support (i18n)**: Full localization across 6 languages: English (`en`), French (`fr`), German (`de`), Spanish (`es`), Italian (`it`), and Portuguese (`pt`), with an active language selector.
 - **SEO & Legal**: Comprehensive metadata, dynamic `sitemap.xml`, `robots.txt`, Privacy Policy (`/privacy`), Terms of Service (`/terms`), and footer links to [Personal Page](https://www.louisvolant.com) and [Portfolio](https://www.louisvolant.com/portfolio).

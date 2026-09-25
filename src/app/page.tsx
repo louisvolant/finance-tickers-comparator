@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { I18nProvider, useI18n } from '@/context/I18nContext';
 import { Navbar } from './components/Navbar';
@@ -13,6 +13,8 @@ import { Footer } from './components/Footer';
 import { TickerRow } from './components/TickerRow';
 import { TickerCard } from './components/TickerCard';
 import { SortableTickerCard } from './components/SortableTickerCard';
+import { DisplayModeSelector } from './components/DisplayModeSelector';
+import { DisplayMode, groupTickersByExchange } from '@/lib/displayModes';
 import {
   DndContext,
   closestCenter,
@@ -64,6 +66,38 @@ function Dashboard() {
   const [selectedTicker, setSelectedTicker] = useState<UserTicker | null>(null);
   const [editingTicker, setEditingTicker] = useState<UserTicker | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('custom');
+
+  // Load user's preferred display mode from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('ticker_tracker_display_mode') as DisplayMode;
+      if (saved === 'custom' || saved === 'alphabetical' || saved === 'by_exchange') {
+        setDisplayMode(saved);
+      }
+    } catch {}
+  }, []);
+
+  const handleDisplayModeChange = (mode: DisplayMode) => {
+    setDisplayMode(mode);
+    try {
+      localStorage.setItem('ticker_tracker_display_mode', mode);
+    } catch {}
+  };
+
+  const displayedTickers = useMemo(() => {
+    if (displayMode === 'alphabetical') {
+      return [...tickers].sort((a, b) => a.symbol.localeCompare(b.symbol));
+    }
+    return tickers;
+  }, [tickers, displayMode]);
+
+  const exchangeGroups = useMemo(() => {
+    if (displayMode === 'by_exchange') {
+      return groupTickersByExchange(tickers);
+    }
+    return [];
+  }, [tickers, displayMode]);
 
   // Setup sensors with activation constraints:
   // - Desktop: pointer distance 8px before initiating drag
@@ -481,96 +515,232 @@ function Dashboard() {
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span className="hidden sm:inline">{t('nav.addTicker')}</span>
             </button>
+            <DisplayModeSelector
+              currentMode={displayMode}
+              onModeChange={handleDisplayModeChange}
+            />
           </div>
         </div>
 
         {/* Main Content: Desktop Table & Mobile Cards */}
         {tickers.length > 0 ? (
           <div>
-            {/* Desktop Table View (>= 768px) */}
-            <div className="hidden md:block rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                    <th className="py-3 px-3 w-14 text-center">
-                      <ArrowUpDown className="w-3.5 h-3.5 mx-auto text-slate-500" />
-                    </th>
-                    <th className="py-3 px-4">{t('watchlist.colTicker')}</th>
-                    <th className="py-3 px-4 text-right">{t('watchlist.colPrice')}</th>
-                    <th className="py-3 px-4 text-right">{t('watchlist.colTracking')}</th>
-                    <th className="py-3 px-4 text-center">{t('watchlist.colDiff')}</th>
-                    <th className="py-3 px-4 text-center">{t('watchlist.colCurrentPE')}</th>
-                    <th className="py-3 px-4 text-center">{t('watchlist.colForwardPE')}</th>
-                    <th className="py-3 px-3 text-right">{t('watchlist.colActions')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/40 text-sm">
-                  {tickers.map((ticker, idx) => (
-                    <TickerRow
+            {displayMode === 'by_exchange' ? (
+              /* Grouped by Trading Exchange (PARIS, NASDAQ, NYSE, etc.) */
+              <div className="space-y-6">
+                {exchangeGroups.map((group) => (
+                  <div key={group.id} className="rounded-2xl bg-slate-900/40 border border-slate-800/80 p-3.5 sm:p-4 shadow-lg">
+                    {/* Exchange Header */}
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800/70">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border ${group.badgeClass}`}>
+                          {group.shortName}
+                        </span>
+                        <h3 className="text-sm font-bold text-white tracking-wide">{group.name}</h3>
+                      </div>
+                      <span className="text-xs text-slate-400 font-medium bg-slate-800/60 px-2.5 py-0.5 rounded-md border border-slate-700/40">
+                        {t('display.exchangeCount', { count: group.tickers.length })}
+                      </span>
+                    </div>
+
+                    {/* Desktop Table for this exchange */}
+                    <div className="hidden md:block rounded-xl bg-slate-900/80 border border-slate-800/70 overflow-hidden shadow">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                            <th className="py-2.5 px-3 w-14 text-center">
+                              <ArrowUpDown className="w-3.5 h-3.5 mx-auto text-slate-500" />
+                            </th>
+                            <th className="py-2.5 px-4">{t('watchlist.colTicker')}</th>
+                            <th className="py-2.5 px-4 text-right">{t('watchlist.colPrice')}</th>
+                            <th className="py-2.5 px-4 text-right">{t('watchlist.colTracking')}</th>
+                            <th className="py-2.5 px-4 text-center">{t('watchlist.colDiff')}</th>
+                            <th className="py-2.5 px-4 text-center">{t('watchlist.colCurrentPE')}</th>
+                            <th className="py-2.5 px-4 text-center">{t('watchlist.colForwardPE')}</th>
+                            <th className="py-2.5 px-3 text-right">{t('watchlist.colActions')}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/40 text-sm">
+                          {group.tickers.map((ticker, idx) => (
+                            <TickerRow
+                              key={ticker.id}
+                              ticker={ticker}
+                              index={idx}
+                              totalCount={group.tickers.length}
+                              onMoveUp={() => {}}
+                              onMoveDown={() => {}}
+                              onClick={(t) => setSelectedTicker(t)}
+                              onEdit={(t) => setEditingTicker(t)}
+                              onDelete={(t) => handleDeleteTicker(t)}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Cards for this exchange */}
+                    <div className="md:hidden space-y-2.5">
+                      {group.tickers.map((ticker, idx) => (
+                        <TickerCard
+                          key={ticker.id}
+                          ticker={ticker}
+                          index={idx}
+                          totalCount={group.tickers.length}
+                          onMoveUp={() => {}}
+                          onMoveDown={() => {}}
+                          onClick={(t) => setSelectedTicker(t)}
+                          onEdit={(t) => setEditingTicker(t)}
+                          onDelete={(t) => handleDeleteTicker(t)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : displayMode === 'alphabetical' ? (
+              /* Alphabetical A → Z View */
+              <div>
+                {/* Desktop Table View (>= 768px) */}
+                <div className="hidden md:block rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        <th className="py-3 px-3 w-14 text-center">
+                          <ArrowUpDown className="w-3.5 h-3.5 mx-auto text-slate-500" />
+                        </th>
+                        <th className="py-3 px-4">{t('watchlist.colTicker')}</th>
+                        <th className="py-3 px-4 text-right">{t('watchlist.colPrice')}</th>
+                        <th className="py-3 px-4 text-right">{t('watchlist.colTracking')}</th>
+                        <th className="py-3 px-4 text-center">{t('watchlist.colDiff')}</th>
+                        <th className="py-3 px-4 text-center">{t('watchlist.colCurrentPE')}</th>
+                        <th className="py-3 px-4 text-center">{t('watchlist.colForwardPE')}</th>
+                        <th className="py-3 px-3 text-right">{t('watchlist.colActions')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40 text-sm">
+                      {displayedTickers.map((ticker, idx) => (
+                        <TickerRow
+                          key={ticker.id}
+                          ticker={ticker}
+                          index={idx}
+                          totalCount={displayedTickers.length}
+                          onMoveUp={() => {}}
+                          onMoveDown={() => {}}
+                          onClick={(t) => setSelectedTicker(t)}
+                          onEdit={(t) => setEditingTicker(t)}
+                          onDelete={(t) => handleDeleteTicker(t)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards View (< 768px) */}
+                <div className="md:hidden space-y-3">
+                  {displayedTickers.map((ticker, idx) => (
+                    <TickerCard
                       key={ticker.id}
                       ticker={ticker}
                       index={idx}
-                      totalCount={tickers.length}
-                      onMoveUp={() => handleMove(idx, 'up')}
-                      onMoveDown={() => handleMove(idx, 'down')}
+                      totalCount={displayedTickers.length}
+                      onMoveUp={() => {}}
+                      onMoveDown={() => {}}
                       onClick={(t) => setSelectedTicker(t)}
                       onEdit={(t) => setEditingTicker(t)}
                       onDelete={(t) => handleDeleteTicker(t)}
                     />
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+            ) : (
+              /* Custom / Manual Ordered View with Long-Press Drag & Drop */
+              <div>
+                {/* Desktop Table View (>= 768px) */}
+                <div className="hidden md:block rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        <th className="py-3 px-3 w-14 text-center">
+                          <ArrowUpDown className="w-3.5 h-3.5 mx-auto text-slate-500" />
+                        </th>
+                        <th className="py-3 px-4">{t('watchlist.colTicker')}</th>
+                        <th className="py-3 px-4 text-right">{t('watchlist.colPrice')}</th>
+                        <th className="py-3 px-4 text-right">{t('watchlist.colTracking')}</th>
+                        <th className="py-3 px-4 text-center">{t('watchlist.colDiff')}</th>
+                        <th className="py-3 px-4 text-center">{t('watchlist.colCurrentPE')}</th>
+                        <th className="py-3 px-4 text-center">{t('watchlist.colForwardPE')}</th>
+                        <th className="py-3 px-3 text-right">{t('watchlist.colActions')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/40 text-sm">
+                      {tickers.map((ticker, idx) => (
+                        <TickerRow
+                          key={ticker.id}
+                          ticker={ticker}
+                          index={idx}
+                          totalCount={tickers.length}
+                          onMoveUp={() => handleMove(idx, 'up')}
+                          onMoveDown={() => handleMove(idx, 'down')}
+                          onClick={(t) => setSelectedTicker(t)}
+                          onEdit={(t) => setEditingTicker(t)}
+                          onDelete={(t) => handleDeleteTicker(t)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-            {/* Mobile Cards View (< 768px) with Long-Press Drag & Drop */}
-            <div className="md:hidden">
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onDragCancel={handleDragCancel}
-              >
-                <SortableContext
-                  items={tickers.map((t) => t.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-3">
-                    {tickers.map((ticker, idx) => (
-                      <SortableTickerCard
-                        key={ticker.id}
-                        ticker={ticker}
-                        index={idx}
-                        totalCount={tickers.length}
-                        onMoveUp={() => handleMove(idx, 'up')}
-                        onMoveDown={() => handleMove(idx, 'down')}
-                        onClick={(t) => setSelectedTicker(t)}
-                        onEdit={(t) => setEditingTicker(t)}
-                        onDelete={(t) => handleDeleteTicker(t)}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
+                {/* Mobile Cards View (< 768px) with Long-Press Drag & Drop */}
+                <div className="md:hidden">
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onDragCancel={handleDragCancel}
+                  >
+                    <SortableContext
+                      items={tickers.map((t) => t.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-3">
+                        {tickers.map((ticker, idx) => (
+                          <SortableTickerCard
+                            key={ticker.id}
+                            ticker={ticker}
+                            index={idx}
+                            totalCount={tickers.length}
+                            onMoveUp={() => handleMove(idx, 'up')}
+                            onMoveDown={() => handleMove(idx, 'down')}
+                            onClick={(t) => setSelectedTicker(t)}
+                            onEdit={(t) => setEditingTicker(t)}
+                            onDelete={(t) => handleDeleteTicker(t)}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
 
-                {/* Elevated Drag Overlay on Long-Press Surimpression */}
-                <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
-                  {activeTicker ? (
-                    <div className="scale-[1.03] shadow-2xl ring-2 ring-emerald-400 bg-slate-900 rounded-xl opacity-95 cursor-grabbing pointer-events-none transition-transform">
-                      <TickerCard
-                        ticker={activeTicker}
-                        index={tickers.findIndex((t) => t.id === activeTicker.id)}
-                        totalCount={tickers.length}
-                        onMoveUp={() => {}}
-                        onMoveDown={() => {}}
-                        onClick={() => {}}
-                        onEdit={() => {}}
-                        onDelete={() => {}}
-                      />
-                    </div>
-                  ) : null}
-                </DragOverlay>
-              </DndContext>
-            </div>
+                    {/* Elevated Drag Overlay on Long-Press Surimpression */}
+                    <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
+                      {activeTicker ? (
+                        <div className="scale-[1.03] shadow-2xl ring-2 ring-emerald-400 bg-slate-900 rounded-xl opacity-95 cursor-grabbing pointer-events-none transition-transform">
+                          <TickerCard
+                            ticker={activeTicker}
+                            index={tickers.findIndex((t) => t.id === activeTicker.id)}
+                            totalCount={tickers.length}
+                            onMoveUp={() => {}}
+                            onMoveDown={() => {}}
+                            onClick={() => {}}
+                            onEdit={() => {}}
+                            onDelete={() => {}}
+                          />
+                        </div>
+                      ) : null}
+                    </DragOverlay>
+                  </DndContext>
+                </div>
+              </div>
+            )}
 
             {/* Discreet Zero User Tracking Footnote at the bottom of the tickers list */}
             <div className="mt-4 rounded-xl bg-slate-900/40 border border-slate-800/80 p-3 flex items-center gap-2.5 text-xs text-slate-400">
