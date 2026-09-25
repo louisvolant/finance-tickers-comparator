@@ -20,7 +20,15 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { UserTicker, TickerDetails } from '@/lib/types';
-import { formatCurrency, formatPercent, formatMultiple, formatCompactNumber } from '@/lib/utils';
+import {
+  formatCurrency,
+  formatPercent,
+  formatMultiple,
+  formatCompactNumber,
+  getExtendedSessionBadgeClass,
+  getForwardPeBadgeClass,
+  getForwardPeCardClass,
+} from '@/lib/utils';
 import { useI18n } from '@/context/I18nContext';
 
 interface TickerDetailsModalProps {
@@ -194,20 +202,18 @@ export function TickerDetailsModal({
                 {formatPercent(quote?.changePercent)} {t('watchlist.today')}
               </span>
 
-              {/* Extended session indicator: (🌅 +0.03%) or (🌙 -0.12%) */}
+              {/* Extended session indicator with intensified red when below -0.20% */}
               {hasExtended && (
                 <span
                   title={`${extendedLabel}: ${formatPercent(extendedPercent)}`}
-                  className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                    isPositiveExtended
-                      ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                      : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-                  }`}
+                  className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${getExtendedSessionBadgeClass(
+                    extendedPercent
+                  )}`}
                 >
                   {isPreMarket ? (
-                    <Sunrise className="w-3 h-3 text-amber-400 shrink-0" />
+                    <Sunrise className="w-3 h-3 shrink-0" />
                   ) : (
-                    <Moon className="w-3 h-3 text-indigo-300 shrink-0" />
+                    <Moon className="w-3 h-3 shrink-0" />
                   )}
                   <span>
                     {extendedLabel} {formatPercent(extendedPercent)}
@@ -254,13 +260,13 @@ export function TickerDetailsModal({
             <span className="text-[10px] text-slate-400 block mt-0.5">{t('details.currentPeDesc')}</span>
           </div>
 
-          {/* Forward P/E */}
-          <div className="p-3 bg-cyan-950/20 border border-cyan-800/30 rounded-xl">
-            <span className="text-[11px] font-medium text-cyan-300 block mb-1">{t('details.forwardPe')}</span>
-            <div className="text-lg sm:text-xl font-black text-cyan-400">
+          {/* Forward P/E with custom valuation color tiers */}
+          <div className={`p-3 rounded-xl border transition ${getForwardPeCardClass(quote?.forwardPE)}`}>
+            <span className="text-[11px] font-medium block mb-1 opacity-90">{t('details.forwardPe')}</span>
+            <div className="text-lg sm:text-xl font-black">
               {formatMultiple(quote?.forwardPE)}
             </div>
-            <span className="text-[10px] text-slate-400 block mt-0.5">{t('details.forwardPeDesc')}</span>
+            <span className="text-[10px] block mt-0.5 opacity-80">{t('details.forwardPeDesc')}</span>
           </div>
         </div>
 
@@ -486,8 +492,18 @@ export function TickerDetailsModal({
                             '—'
                           )}
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono font-bold text-white whitespace-nowrap">
-                          {est.impliedForwardPE ? `${est.impliedForwardPE.toFixed(1)}x` : '—'}
+                        <td className="py-2.5 px-3 text-right font-mono font-bold whitespace-nowrap">
+                          {est.impliedForwardPE ? (
+                            <span
+                              className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold border font-mono ${getForwardPeBadgeClass(
+                                est.impliedForwardPE
+                              )}`}
+                            >
+                              {est.impliedForwardPE.toFixed(1)}x
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">—</span>
+                          )}
                         </td>
                         <td className="py-2.5 px-3 text-right font-medium whitespace-nowrap">
                           {est.growth !== null ? (

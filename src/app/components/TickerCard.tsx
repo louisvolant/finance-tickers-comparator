@@ -3,7 +3,7 @@
 import React from 'react';
 import { ArrowUp, ArrowDown, Sunrise, Moon } from 'lucide-react';
 import { UserTicker } from '@/lib/types';
-import { formatCurrency, formatPercent, formatMultiple } from '@/lib/utils';
+import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass } from '@/lib/utils';
 import { useI18n } from '@/context/I18nContext';
 
 interface TickerCardProps {
@@ -42,7 +42,6 @@ export function TickerCard({
     quote?.extendedChangePercent !== undefined;
   const isPreMarket = quote?.extendedType === 'pre';
   const extendedPercent = quote?.extendedChangePercent ?? 0;
-  const isPositiveExtended = extendedPercent >= 0;
   const extendedLabel = isPreMarket ? t('watchlist.preMarket') : t('watchlist.afterHours');
 
   return (
@@ -51,14 +50,14 @@ export function TickerCard({
       onClick={() => onClick(ticker)}
       className="px-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 active:scale-[0.99] transition cursor-pointer select-none flex items-center justify-between gap-3 shadow-sm"
     >
-      {/* Left side: Symbol, Current P/E pill, Name & optional Target Diff */}
+      {/* Left side: Symbol, Current P/E pill, Forward P/E pill, Name & optional Target Diff */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <span className="font-extrabold text-base text-white tracking-wide">{ticker.symbol}</span>
 
           {/* Current PE on the same line */}
           {quote?.trailingPE ? (
-            <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
               PE {formatMultiple(quote.trailingPE)}
             </span>
           ) : (
@@ -66,6 +65,18 @@ export function TickerCard({
               {quote?.exchange || 'Stock'}
             </span>
           )}
+
+          {/* Forward PE pill with customized valuation color tiers */}
+          {quote?.forwardPE ? (
+            <span
+              title={`Forward P/E: ${formatMultiple(quote.forwardPE)}`}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-bold border font-mono ${getForwardPeBadgeClass(
+                quote.forwardPE
+              )}`}
+            >
+              Fwd {formatMultiple(quote.forwardPE)}
+            </span>
+          ) : null}
 
           {/* Target % diff badge if set */}
           {hasTracking && (
@@ -107,20 +118,18 @@ export function TickerCard({
             <span>{formatPercent(quote?.changePercent)}</span>
           </span>
 
-          {/* Extended session indicator: (🌅 +0.03%) or (🌙 -0.12%) */}
+          {/* Extended session indicator with intensified red when below -0.20% */}
           {hasExtended && (
             <span
               title={`${extendedLabel}: ${formatPercent(extendedPercent)}`}
-              className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1 py-0.2 rounded border ${
-                isPositiveExtended
-                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                  : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-              }`}
+              className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1 py-0.2 rounded border ${getExtendedSessionBadgeClass(
+                extendedPercent
+              )}`}
             >
               {isPreMarket ? (
-                <Sunrise className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                <Sunrise className="w-2.5 h-2.5 shrink-0" />
               ) : (
-                <Moon className="w-2.5 h-2.5 text-indigo-300 shrink-0" />
+                <Moon className="w-2.5 h-2.5 shrink-0" />
               )}
               <span>{formatPercent(extendedPercent)}</span>
             </span>

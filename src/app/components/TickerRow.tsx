@@ -3,7 +3,7 @@
 import React from 'react';
 import { ArrowUp, ArrowDown, ChevronUp, ChevronDown, BarChart2, Edit2, Trash2, Sunrise, Moon } from 'lucide-react';
 import { UserTicker } from '@/lib/types';
-import { formatCurrency, formatPercent, formatMultiple } from '@/lib/utils';
+import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass } from '@/lib/utils';
 import { useI18n } from '@/context/I18nContext';
 
 interface TickerRowProps {
@@ -101,20 +101,18 @@ export function TickerRow({
             <span>{formatPercent(quote?.changePercent)}</span>
           </span>
 
-          {/* Extended session indicator: (🌅 +0.03%) or (🌙 -0.12%) */}
+          {/* Extended session indicator with intensified red when below -0.20% */}
           {hasExtended && (
             <span
               title={`${extendedLabel}: ${formatPercent(extendedPercent)}`}
-              className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1 py-0.2 rounded border ${
-                isPositiveExtended
-                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                  : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-              }`}
+              className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1 py-0.2 rounded border ${getExtendedSessionBadgeClass(
+                extendedPercent
+              )}`}
             >
               {isPreMarket ? (
-                <Sunrise className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                <Sunrise className="w-2.5 h-2.5 shrink-0" />
               ) : (
-                <Moon className="w-2.5 h-2.5 text-indigo-300 shrink-0" />
+                <Moon className="w-2.5 h-2.5 shrink-0" />
               )}
               <span>{formatPercent(extendedPercent)}</span>
             </span>
@@ -160,11 +158,20 @@ export function TickerRow({
         </span>
       </td>
 
-      {/* Forward P/E */}
+      {/* Forward P/E with custom valuation color tiers */}
       <td className="py-1.5 px-3 text-center">
-        <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-bold bg-slate-800 text-cyan-400 border border-slate-700/60 font-mono">
-          {formatMultiple(quote?.forwardPE)}
-        </span>
+        {quote?.forwardPE ? (
+          <span
+            title={`Forward P/E: ${formatMultiple(quote.forwardPE)}`}
+            className={`inline-block px-2 py-0.5 rounded-lg text-xs font-bold border font-mono transition ${getForwardPeBadgeClass(
+              quote.forwardPE
+            )}`}
+          >
+            {formatMultiple(quote.forwardPE)}
+          </span>
+        ) : (
+          <span className="text-xs text-slate-500 font-mono">—</span>
+        )}
       </td>
 
       {/* Actions */}

@@ -5,9 +5,15 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
 ## Key Features
 
 - **Real-Time & 15-min Delayed Market Quotes**: Powered by Yahoo Finance (`yahoo-finance2`), covering US stocks, European equities (e.g. `MC.PA`, `AIR.PA`), and ETFs (e.g. `CW8.PA`).
-- **Valuation Multiples on the Same Line**: Instantly displays **Current P/E** (`trailingPE`) right beside the ticker symbol, along with **Forward P/E** (`forwardPE`) for fast multiple comparisons.
+- **Valuation Multiples with Color Tiers**: Instantly displays **Current P/E** (`trailingPE`) and **Forward P/E** (`forwardPE`) on both mobile cards and desktop tables. Forward P/E is dynamically colored by valuation tier:
+  - Deep value (< 15x): emerald green
+  - Moderate value (15x - 20x): teal
+  - **Sweet Spot (20x - 30x)**: prominent cyan highlight
+  - Elevated (30x - 40x): warm amber
+  - High (40x - 60x): orange
+  - Stretched (> 60x): deep red / rose
 - **Ultra-Compact Mobile & Desktop View**: Designed to fit maximum tickers on mobile screens with ~1/3 of standard card height without decreasing font readability. Current price and daily change (% evolution) are docked top-right; action buttons and deep stats open seamlessly upon tapping.
-- **Pre-Market, After-Hours & Sunday Futures Indicator**: Displays real-time extended session percentage indicators directly beside daily change (e.g. `▼ -0.41% (🌅 +0.03%)` or `(🌙 -0.12%)`). Essential for monitoring after-hours earnings reports, early morning pre-market trading, and Sunday evening futures pre-trends before Monday market open.
+- **Pre-Market, After-Hours & Sunday Futures Indicator**: Displays real-time extended session percentage indicators directly beside daily change (e.g. `▼ -0.41% (🌅 +0.03%)` or `(🌙 -0.12%)`). Essential for monitoring after-hours earnings reports, early morning pre-market trading, and Sunday evening futures pre-trends before Monday market open. Drops below **-0.20%** are highlighted in deep red / rose.
 - **PWA Long-Press Drag-and-Drop Reordering with Haptic Feedback**: Press and hold any compressed ticker card (250ms delay, 5px movement tolerance) to pick it up in elevation/overlay (`DragOverlay` with subtle scale, shadow, and emerald border) and drag it to reorder.
   - Native vertical touch scrolling is preserved thanks to `touch-action: pan-y` and tight tolerance threshold.
   - Haptic feedback is triggered on drag initiation via `navigator.vibrate(15)` on Android/Chrome and via the hidden iOS Safari `<input type="checkbox" switch />` trigger for the Apple Taptic Engine.
