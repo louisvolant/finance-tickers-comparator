@@ -30,6 +30,38 @@ function normalizeQuote(raw: any, symbolOverride?: string): TickerQuote {
     forwardPE = Number((price / raw.epsForward).toFixed(2));
   }
 
+  // Extended session calculation (Pre-market / After-market / Futures)
+  let extendedType: 'pre' | 'post' | null = null;
+  let extendedPrice: number | null = null;
+  let extendedChange: number | null = null;
+  let extendedChangePercent: number | null = null;
+
+  const prePrice = raw.preMarketPrice !== undefined && raw.preMarketPrice !== null ? Number(raw.preMarketPrice) : null;
+  const preChange = raw.preMarketChange !== undefined && raw.preMarketChange !== null ? Number(raw.preMarketChange) : null;
+  const prePercent = raw.preMarketChangePercent !== undefined && raw.preMarketChangePercent !== null ? Number(raw.preMarketChangePercent) : null;
+
+  const postPrice = raw.postMarketPrice !== undefined && raw.postMarketPrice !== null ? Number(raw.postMarketPrice) : null;
+  const postChange = raw.postMarketChange !== undefined && raw.postMarketChange !== null ? Number(raw.postMarketChange) : null;
+  const postPercent = raw.postMarketChangePercent !== undefined && raw.postMarketChangePercent !== null ? Number(raw.postMarketChangePercent) : null;
+
+  const marketState = raw.marketState || null;
+
+  if (marketState === 'PRE' || (prePercent !== null && marketState !== 'POST')) {
+    if (prePercent !== null) {
+      extendedType = 'pre';
+      extendedPrice = prePrice ? Number(prePrice.toFixed(4)) : null;
+      extendedChange = preChange ? Number(preChange.toFixed(4)) : null;
+      extendedChangePercent = Number(prePercent.toFixed(2));
+    }
+  } else if (marketState === 'POST' || postPercent !== null) {
+    if (postPercent !== null) {
+      extendedType = 'post';
+      extendedPrice = postPrice ? Number(postPrice.toFixed(4)) : null;
+      extendedChange = postChange ? Number(postChange.toFixed(4)) : null;
+      extendedChangePercent = Number(postPercent.toFixed(2));
+    }
+  }
+
   return {
     symbol: sym,
     name: raw.shortName || raw.longName || sym || 'Unknown',
@@ -50,6 +82,16 @@ function normalizeQuote(raw: any, symbolOverride?: string): TickerQuote {
     exchange: raw.exchange || raw.fullExchangeName || '',
     quoteType: raw.quoteType || 'EQUITY',
     updatedAt: Date.now(),
+    marketState,
+    preMarketPrice: prePrice ? Number(prePrice.toFixed(4)) : null,
+    preMarketChange: preChange ? Number(preChange.toFixed(4)) : null,
+    preMarketChangePercent: prePercent !== null ? Number(prePercent.toFixed(2)) : null,
+    postMarketPrice: postPrice ? Number(postPrice.toFixed(4)) : null,
+    postMarketChange: postChange ? Number(postChange.toFixed(4)) : null,
+    postMarketChangePercent: postPercent !== null ? Number(postPercent.toFixed(2)) : null,
+    extendedType,
+    extendedPrice,
+    extendedChangePercent,
   };
 }
 

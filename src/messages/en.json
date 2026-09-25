@@ -45,7 +45,10 @@
     "noTarget": "No target set",
     "pe": "P/E",
     "curPe": "Cur P/E",
-    "fwdPe": "Fwd P/E"
+    "fwdPe": "Fwd P/E",
+    "preMarket": "Pre-Market",
+    "afterHours": "After-Hours",
+    "extendedSession": "Extended Session"
   },
   "search": {
     "title": "Add Stock Ticker",

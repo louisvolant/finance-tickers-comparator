@@ -15,6 +15,8 @@ import {
   AlertTriangle,
   Users,
   Layers,
+  Sunrise,
+  Moon,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { UserTicker, TickerDetails } from '@/lib/types';
@@ -86,6 +88,15 @@ export function TickerDetailsModal({
   const hasTracking = trackingVal !== null && trackingVal !== undefined && trackingVal > 0;
   const diffPercent = hasTracking ? ((currentPrice - trackingVal!) / trackingVal!) * 100 : 0;
   const isPositiveDiff = diffPercent >= 0;
+
+  // Extended session (Pre-market 🌅 / After-hours 🌙 / Futures)
+  const hasExtended =
+    quote?.extendedChangePercent !== null &&
+    quote?.extendedChangePercent !== undefined;
+  const isPreMarket = quote?.extendedType === 'pre';
+  const extendedPercent = quote?.extendedChangePercent ?? 0;
+  const isPositiveExtended = extendedPercent >= 0;
+  const extendedLabel = isPreMarket ? t('watchlist.preMarket') : t('watchlist.afterHours');
 
   // 52-week position calculation
   let rangePercent = 50;
@@ -174,12 +185,35 @@ export function TickerDetailsModal({
             <div className="text-lg sm:text-xl font-bold text-white">
               {formatCurrency(currentPrice, quote?.currency)}
             </div>
-            <div
-              className={`text-[11px] font-semibold mt-0.5 ${
-                (quote?.changePercent ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
-              }`}
-            >
-              {formatPercent(quote?.changePercent)} {t('watchlist.today')}
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              <span
+                className={`text-[11px] font-semibold ${
+                  (quote?.changePercent ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                }`}
+              >
+                {formatPercent(quote?.changePercent)} {t('watchlist.today')}
+              </span>
+
+              {/* Extended session indicator: (🌅 +0.03%) or (🌙 -0.12%) */}
+              {hasExtended && (
+                <span
+                  title={`${extendedLabel}: ${formatPercent(extendedPercent)}`}
+                  className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                    isPositiveExtended
+                      ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                      : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                  }`}
+                >
+                  {isPreMarket ? (
+                    <Sunrise className="w-3 h-3 text-amber-400 shrink-0" />
+                  ) : (
+                    <Moon className="w-3 h-3 text-indigo-300 shrink-0" />
+                  )}
+                  <span>
+                    {extendedLabel} {formatPercent(extendedPercent)}
+                  </span>
+                </span>
+              )}
             </div>
           </div>
 

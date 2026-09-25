@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, Sunrise, Moon } from 'lucide-react';
 import { UserTicker } from '@/lib/types';
 import { formatCurrency, formatPercent, formatMultiple } from '@/lib/utils';
 import { useI18n } from '@/context/I18nContext';
@@ -35,6 +35,15 @@ export function TickerCard({
   const diffPercent = hasTracking ? ((currentPrice - trackingVal!) / trackingVal!) * 100 : 0;
   const isPositiveDiff = diffPercent >= 0;
   const isPositiveToday = (quote?.changePercent ?? 0) >= 0;
+
+  // Extended session (Pre-market 🌅 / After-hours 🌙 / Futures)
+  const hasExtended =
+    quote?.extendedChangePercent !== null &&
+    quote?.extendedChangePercent !== undefined;
+  const isPreMarket = quote?.extendedType === 'pre';
+  const extendedPercent = quote?.extendedChangePercent ?? 0;
+  const isPositiveExtended = extendedPercent >= 0;
+  const extendedLabel = isPreMarket ? t('watchlist.preMarket') : t('watchlist.afterHours');
 
   return (
     <div
@@ -89,12 +98,33 @@ export function TickerCard({
           {formatCurrency(currentPrice, quote?.currency)}
         </div>
         <div
-          className={`flex items-center justify-end gap-0.5 text-xs font-semibold leading-tight mt-0.5 ${
+          className={`flex items-center justify-end gap-1 text-xs font-semibold leading-tight mt-0.5 ${
             isPositiveToday ? 'text-emerald-400' : 'text-rose-400'
           }`}
         >
-          {isPositiveToday ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-          <span>{formatPercent(quote?.changePercent)}</span>
+          <span className="flex items-center gap-0.5">
+            {isPositiveToday ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+            <span>{formatPercent(quote?.changePercent)}</span>
+          </span>
+
+          {/* Extended session indicator: (🌅 +0.03%) or (🌙 -0.12%) */}
+          {hasExtended && (
+            <span
+              title={`${extendedLabel}: ${formatPercent(extendedPercent)}`}
+              className={`inline-flex items-center gap-0.5 text-[10px] font-bold px-1 py-0.2 rounded border ${
+                isPositiveExtended
+                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                  : 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+              }`}
+            >
+              {isPreMarket ? (
+                <Sunrise className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+              ) : (
+                <Moon className="w-2.5 h-2.5 text-indigo-300 shrink-0" />
+              )}
+              <span>{formatPercent(extendedPercent)}</span>
+            </span>
+          )}
         </div>
       </div>
     </div>

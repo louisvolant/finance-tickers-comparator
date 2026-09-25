@@ -45,7 +45,10 @@
     "noTarget": "Sin objetivo",
     "pe": "PER",
     "curPe": "PER act.",
-    "fwdPe": "PER fwd."
+    "fwdPe": "PER fwd.",
+    "preMarket": "Preapertura",
+    "afterHours": "Posmercado",
+    "extendedSession": "Sesión extendida"
   },
   "search": {
     "title": "Añadir ticker",

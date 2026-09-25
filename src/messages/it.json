@@ -45,7 +45,10 @@
     "noTarget": "Nessun target",
     "pe": "P/E",
     "curPe": "P/E corr.",
-    "fwdPe": "P/E fwd."
+    "fwdPe": "P/E fwd.",
+    "preMarket": "Pre-mercato",
+    "afterHours": "Post-mercato",
+    "extendedSession": "Sessione estesa"
   },
   "search": {
     "title": "Aggiungi ticker",

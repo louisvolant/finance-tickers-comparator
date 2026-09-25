@@ -18,6 +18,16 @@ export interface TickerQuote {
   exchange: string;
   quoteType: string;
   updatedAt: number;
+  marketState?: string | null;
+  preMarketPrice?: number | null;
+  preMarketChange?: number | null;
+  preMarketChangePercent?: number | null;
+  postMarketPrice?: number | null;
+  postMarketChange?: number | null;
+  postMarketChangePercent?: number | null;
+  extendedType?: 'pre' | 'post' | null;
+  extendedPrice?: number | null;
+  extendedChangePercent?: number | null;
 }
 
 export interface UserTicker {

@@ -45,7 +45,10 @@
     "noTarget": "Ohne Richtwert",
     "pe": "KGV",
     "curPe": "KGV akt.",
-    "fwdPe": "KGV fwd."
+    "fwdPe": "KGV fwd.",
+    "preMarket": "Vorbörslich",
+    "afterHours": "Nachbörslich",
+    "extendedSession": "Erweiterte Handelszeit"
   },
   "search": {
     "title": "Ticker hinzufügen",

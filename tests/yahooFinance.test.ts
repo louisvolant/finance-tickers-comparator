@@ -28,4 +28,16 @@ describe('Yahoo Finance Service', () => {
     assert.strictEqual(quote.currency, 'EUR');
     assert.ok(quote.price > 0);
   });
+
+  test('should parse extended hours session indicators when available', async () => {
+    const quote = await getQuote('AAPL');
+    assert.ok(quote);
+    assert.ok('marketState' in quote);
+    assert.ok('extendedType' in quote);
+    assert.ok('extendedChangePercent' in quote);
+    if (quote.extendedChangePercent !== null && quote.extendedChangePercent !== undefined) {
+      assert.ok(typeof quote.extendedChangePercent === 'number');
+      assert.ok(quote.extendedType === 'pre' || quote.extendedType === 'post');
+    }
+  });
 });
