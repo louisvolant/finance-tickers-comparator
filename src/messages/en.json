@@ -63,7 +63,10 @@
     "addBtn": "Add to Watchlist",
     "change": "Change",
     "alreadyTracked": "Already tracked",
-    "back": "Back"
+    "back": "Back",
+    "addDirect": "Add",
+    "adding": "Adding...",
+    "instantAddHint": "Click any ticker to add it instantly to your watchlist. Cost basis / reference target is completely optional."
   },
   "details": {
     "priceHistory": "Price History",
@@ -85,6 +88,7 @@
     "currentPrice": "Current Price",
     "trackingTarget": "Reference Target",
     "vsTarget": "vs target",
+    "setTarget": "Set target / cost basis",
     "editTracking": "Edit Reference Target",
     "deleteTicker": "Delete Ticker",
     "close": "Close",

@@ -63,7 +63,10 @@
     "addBtn": "Añadir a mi lista",
     "change": "Cambiar",
     "alreadyTracked": "Ya está en la lista",
-    "back": "Volver"
+    "back": "Volver",
+    "addDirect": "Añadir",
+    "adding": "Añadiendo...",
+    "instantAddHint": "Haga clic en un ticker para añadirlo al instante. El valor de referencia es totalmente opcional."
   },
   "details": {
     "priceHistory": "Histórico de precios",
@@ -85,6 +88,7 @@
     "currentPrice": "Precio actual",
     "trackingTarget": "Valor de referencia",
     "vsTarget": "vs ref.",
+    "setTarget": "Definir precio objetivo / coste",
     "editTracking": "Editar valor de referencia",
     "deleteTicker": "Eliminar ticker",
     "close": "Cerrar",

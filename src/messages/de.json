@@ -63,7 +63,10 @@
     "addBtn": "Zur Watchlist hinzufügen",
     "change": "Ändern",
     "alreadyTracked": "Bereits verfolgt",
-    "back": "Zurück"
+    "back": "Zurück",
+    "addDirect": "Hinzufügen",
+    "adding": "Wird hinzugefügt...",
+    "instantAddHint": "Klicken Sie auf einen Ticker, um ihn sofort hinzuzufügen. Der Referenzwert ist völlig optional."
   },
   "details": {
     "priceHistory": "Kursverlauf",
@@ -85,6 +88,7 @@
     "currentPrice": "Aktueller Kurs",
     "trackingTarget": "Referenzwert",
     "vsTarget": "ggü. Ziel",
+    "setTarget": "Zielwert / Einstandspreis festlegen",
     "editTracking": "Referenzwert bearbeiten",
     "deleteTicker": "Ticker löschen",
     "close": "Schließen",

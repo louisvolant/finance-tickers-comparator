@@ -217,9 +217,16 @@ export function TickerDetailsModal({
             </div>
           </div>
 
-          {/* Reference Target & Diff */}
-          <div className="p-3 bg-slate-950/60 border border-slate-800/80 rounded-xl">
-            <span className="text-[11px] font-medium text-slate-400 block mb-1">{t('details.trackingTarget')}</span>
+          {/* Reference Target & Diff (Clickable to edit/add anytime) */}
+          <div
+            onClick={() => onEditTracking(ticker)}
+            className="p-3 bg-slate-950/60 border border-slate-800/80 hover:border-emerald-500/50 rounded-xl cursor-pointer transition group"
+            title={t('details.editTracking')}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] font-medium text-slate-400">{t('details.trackingTarget')}</span>
+              <Edit2 className="w-3 h-3 text-slate-500 group-hover:text-emerald-400 transition" />
+            </div>
             <div className="text-lg sm:text-xl font-bold text-slate-200">
               {hasTracking ? formatCurrency(trackingVal!, quote?.currency) : '—'}
             </div>
@@ -232,7 +239,9 @@ export function TickerDetailsModal({
                 {formatPercent(diffPercent)} {t('details.vsTarget')}
               </span>
             ) : (
-              <span className="text-[10px] text-slate-500 block mt-1">{t('watchlist.noTarget')}</span>
+              <span className="text-[10px] text-emerald-400/90 group-hover:text-emerald-300 block mt-1 underline">
+                + {t('details.setTarget')}
+              </span>
             )}
           </div>
 

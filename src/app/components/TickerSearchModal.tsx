@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, X, Loader2, ArrowRight, AlertCircle, DollarSign } from 'lucide-react';
-import { TickerSearchResult, TickerQuote } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
+import { Search, X, Loader2, Plus, AlertCircle, Sparkles } from 'lucide-react';
+import { TickerSearchResult } from '@/lib/types';
 import { useI18n } from '@/context/I18nContext';
 
 interface TickerSearchModalProps {
@@ -18,12 +17,7 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TickerSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedTicker, setSelectedTicker] = useState<TickerSearchResult | null>(null);
-  const [previewQuote, setPreviewQuote] = useState<TickerQuote | null>(null);
-  const [loadingQuote, setLoadingQuote] = useState(false);
-  const [trackingValue, setTrackingValue] = useState<string>('');
-  const [notes, setNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [addingSymbol, setAddingSymbol] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Debounced search
@@ -52,67 +46,30 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
     return () => clearTimeout(timer);
   }, [query]);
 
-  // When a ticker is selected, optionally preview live price
-  const handleSelectTicker = async (ticker: TickerSearchResult) => {
-    setSelectedTicker(ticker);
-    setLoadingQuote(true);
-    setError(null);
-
-    try {
-      const res = await fetch(`/api/tickers/quote?symbol=${encodeURIComponent(ticker.symbol)}`);
-      if (res.ok) {
-        const data = await res.json();
-        const quote = data.quotes?.[ticker.symbol.toUpperCase()];
-        if (quote) {
-          setPreviewQuote(quote);
-          // Suggest current market price, but user can change or delete it freely
-          setTrackingValue(quote.price.toString());
-        }
-      }
-    } catch {
-      // Non-blocking preview fetch failure
-    } finally {
-      setLoadingQuote(false);
-    }
-  };
-
-  const handleConfirmAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedTicker) return;
-
-    let val: number | null = null;
-    if (trackingValue.trim()) {
-      const parsed = parseFloat(trackingValue);
-      if (!isNaN(parsed) && parsed > 0) {
-        val = parsed;
-      }
-    }
-
-    setSubmitting(true);
+  // 1-Click Direct Addition: adds ticker immediately with no forced tracking value
+  const handleDirectAdd = async (ticker: TickerSearchResult) => {
+    if (addingSymbol) return;
+    setAddingSymbol(ticker.symbol);
     setError(null);
 
     try {
       await onAddTicker({
-        symbol: selectedTicker.symbol,
-        name: selectedTicker.name,
-        trackingValue: val,
-        notes: notes.trim(),
+        symbol: ticker.symbol,
+        name: ticker.name,
+        trackingValue: null,
+        notes: '',
       });
       handleClose();
     } catch (err: any) {
       setError(err?.message || 'Failed to add ticker');
-    } finally {
-      setSubmitting(false);
+      setAddingSymbol(null);
     }
   };
 
   const handleClose = () => {
     setQuery('');
     setResults([]);
-    setSelectedTicker(null);
-    setPreviewQuote(null);
-    setTrackingValue('');
-    setNotes('');
+    setAddingSymbol(null);
     setError(null);
     onClose();
   };
@@ -125,7 +82,12 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-white">{t('search.title')}</h2>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <span>{t('search.title')}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                1-Click Add
+              </span>
+            </h2>
             <p className="text-xs text-slate-400">{t('search.sub')}</p>
           </div>
           <button
@@ -144,198 +106,107 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
           </div>
         )}
 
-        {!selectedTicker ? (
-          /* Step 1: Search and select */
-          <div className="flex flex-col flex-1 overflow-hidden mt-4">
-            <div className="relative mb-3">
-              <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                autoFocus
-                placeholder={t('search.placeholder')}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-              />
-              {loading && <Loader2 className="absolute right-3.5 top-3 w-4 h-4 text-emerald-400 animate-spin" />}
-            </div>
+        {/* Search input */}
+        <div className="flex flex-col flex-1 overflow-hidden mt-4">
+          <div className="relative mb-3">
+            <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              autoFocus
+              placeholder={t('search.placeholder')}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            />
+            {loading && <Loader2 className="absolute right-3.5 top-3 w-4 h-4 text-emerald-400 animate-spin" />}
+          </div>
 
-            {/* Quick Suggestions */}
-            {!query && (
-              <div className="mb-4">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
-                  {t('search.popular')}
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { symbol: 'AAPL', name: 'Apple Inc.' },
-                    { symbol: 'MSFT', name: 'Microsoft' },
-                    { symbol: 'MC.PA', name: 'LVMH Paris' },
-                    { symbol: 'AIR.PA', name: 'Airbus Paris' },
-                    { symbol: 'CW8.PA', name: 'MSCI World ETF' },
-                    { symbol: 'PUST.PA', name: 'PEA Nasdaq-100' },
-                    { symbol: 'NVDA', name: 'NVIDIA' },
-                  ].map((item) => (
-                    <button
-                      key={item.symbol}
-                      onClick={() => setQuery(item.symbol)}
-                      className="px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700/60 transition cursor-pointer"
-                    >
-                      <span className="font-semibold text-emerald-400 mr-1">{item.symbol}</span>
-                      <span className="text-slate-400">{item.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Results list */}
-            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-[340px]">
-              {results.map((item) => {
-                const isAlreadyAdded = existingSymbols.includes(item.symbol.toUpperCase());
-                return (
+          {/* Quick Suggestions */}
+          {!query && (
+            <div className="mb-4">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
+                {t('search.popular')}
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { symbol: 'AAPL', name: 'Apple Inc.' },
+                  { symbol: 'MSFT', name: 'Microsoft' },
+                  { symbol: 'MC.PA', name: 'LVMH Paris' },
+                  { symbol: 'AIR.PA', name: 'Airbus Paris' },
+                  { symbol: 'CW8.PA', name: 'MSCI World ETF' },
+                  { symbol: 'PUST.PA', name: 'PEA Nasdaq-100' },
+                  { symbol: 'NVDA', name: 'NVIDIA' },
+                ].map((item) => (
                   <button
                     key={item.symbol}
-                    disabled={isAlreadyAdded}
-                    onClick={() => handleSelectTicker(item)}
-                    className={`w-full p-3 rounded-xl border text-left flex items-center justify-between transition ${
-                      isAlreadyAdded
-                        ? 'opacity-50 border-slate-800/40 bg-slate-950 cursor-not-allowed'
-                        : 'border-slate-800/80 bg-slate-900/60 hover:bg-slate-800 hover:border-slate-700 cursor-pointer'
-                    }`}
+                    onClick={() => setQuery(item.symbol)}
+                    className="px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700/60 transition cursor-pointer"
                   >
-                    <div className="min-w-0 pr-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-white tracking-wide">{item.symbol}</span>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700/50">
-                          {item.exchange || item.quoteType}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 truncate mt-0.5">{item.name}</p>
-                    </div>
-                    {isAlreadyAdded ? (
-                      <span className="text-[11px] text-slate-500 font-medium shrink-0">{t('search.alreadyTracked')}</span>
-                    ) : (
-                      <ArrowRight className="w-4 h-4 text-emerald-400 shrink-0" />
-                    )}
+                    <span className="font-semibold text-emerald-400 mr-1">{item.symbol}</span>
+                    <span className="text-slate-400">{item.name}</span>
                   </button>
-                );
-              })}
-
-              {query && !loading && results.length === 0 && (
-                <div className="text-center py-8 text-slate-500 text-sm">
-                  No matching tickers found for &quot;{query}&quot;.
-                </div>
-              )}
+                ))}
+              </div>
             </div>
+          )}
+
+          {/* Results list */}
+          <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-[360px]">
+            {results.map((item) => {
+              const isAlreadyAdded = existingSymbols.includes(item.symbol.toUpperCase());
+              const isAddingThis = addingSymbol === item.symbol;
+              return (
+                <button
+                  key={item.symbol}
+                  disabled={isAlreadyAdded || !!addingSymbol}
+                  onClick={() => handleDirectAdd(item)}
+                  className={`w-full p-3 rounded-xl border text-left flex items-center justify-between transition ${
+                    isAlreadyAdded
+                      ? 'opacity-50 border-slate-800/40 bg-slate-950 cursor-not-allowed'
+                      : 'border-slate-800/80 bg-slate-900/60 hover:bg-slate-800 hover:border-emerald-500/50 cursor-pointer active:scale-[0.99]'
+                  }`}
+                >
+                  <div className="min-w-0 pr-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-white tracking-wide">{item.symbol}</span>
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700/50">
+                        {item.exchange || item.quoteType}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 truncate mt-0.5">{item.name}</p>
+                  </div>
+                  {isAlreadyAdded ? (
+                    <span className="text-[11px] text-slate-500 font-medium shrink-0">{t('search.alreadyTracked')}</span>
+                  ) : isAddingThis ? (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs shrink-0">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>{t('search.adding') || 'Adding...'}</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-bold shrink-0 transition">
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{t('search.addDirect') || 'Ajouter'}</span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+
+            {query && !loading && results.length === 0 && (
+              <div className="text-center py-8 text-slate-500 text-sm">
+                No matching tickers found for &quot;{query}&quot;.
+              </div>
+            )}
           </div>
-        ) : (
-          /* Step 2: Configure tracking value (optional) */
-          <form onSubmit={handleConfirmAdd} className="mt-4 space-y-4">
-            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-base text-white">{selectedTicker.symbol}</span>
-                  <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    {selectedTicker.exchange}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">{selectedTicker.name}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedTicker(null);
-                  setPreviewQuote(null);
-                }}
-                className="text-xs text-emerald-400 hover:underline cursor-pointer"
-              >
-                {t('search.change')}
-              </button>
-            </div>
 
-            {/* Current market price preview */}
-            {loadingQuote ? (
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
-                <span>Loading quote...</span>
-              </div>
-            ) : previewQuote ? (
-              <div className="grid grid-cols-3 gap-2 p-3 bg-slate-800/40 rounded-xl border border-slate-800 text-xs">
-                <div>
-                  <span className="text-slate-400 block text-[10px]">{t('watchlist.colPrice')}</span>
-                  <span className="font-semibold text-white">
-                    {formatCurrency(previewQuote.price, previewQuote.currency)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">{t('watchlist.colCurrentPE')}</span>
-                  <span className="font-semibold text-emerald-400">
-                    {previewQuote.trailingPE ? `${previewQuote.trailingPE}x` : '—'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">{t('watchlist.colForwardPE')}</span>
-                  <span className="font-semibold text-cyan-400">
-                    {previewQuote.forwardPE ? `${previewQuote.forwardPE}x` : '—'}
-                  </span>
-                </div>
-              </div>
-            ) : null}
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                {t('search.trackingLabel')}
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
-                <input
-                  type="number"
-                  step="any"
-                  placeholder={t('search.trackingPlaceholder')}
-                  value={trackingValue}
-                  onChange={(e) => setTrackingValue(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
-                />
-              </div>
-              <p className="text-[11px] text-slate-500 mt-1">
-                {t('search.trackingHint')}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">{t('search.notesLabel')}</label>
-              <input
-                type="text"
-                placeholder={t('search.notesPlaceholder')}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedTicker(null);
-                  setPreviewQuote(null);
-                }}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 font-medium text-xs sm:text-sm transition cursor-pointer"
-              >
-                {t('search.back')}
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
-              >
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                <span>{t('search.addBtn')}</span>
-              </button>
-            </div>
-          </form>
-        )}
+          {/* Discreet hint at the bottom */}
+          <div className="mt-3 pt-3 border-t border-slate-800/60 text-center">
+            <p className="text-[11px] text-slate-500 flex items-center justify-center gap-1">
+              <Sparkles className="w-3 h-3 text-emerald-400" />
+              <span>{t('search.instantAddHint')}</span>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

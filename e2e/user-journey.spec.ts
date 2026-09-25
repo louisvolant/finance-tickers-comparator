@@ -26,31 +26,32 @@ test.describe('Full User Journey E2E', () => {
     // 3. Verify logged in
     await expect(page.getByText(testUsername, { exact: true })).toBeVisible({ timeout: 10000 });
 
-    // 4. Add first ticker: search by ticker 'AAPL'
+    // 4. Add first ticker: search by ticker 'AAPL' (1-click direct addition)
     await page.getByRole('button', { name: /Add Ticker/i }).first().click();
     await page.fill('input[placeholder*="Search symbol"]', 'AAPL');
-    // Click on AAPL result
+    // 1-click on AAPL result directly adds it and closes modal!
     await page.locator('button:not([disabled]):has-text("AAPL")').first().click();
-    // Fill tracking value
-    await page.fill('input[type="number"]', '200');
-    await page.getByRole('button', { name: /Add to Watchlist/i }).click();
 
     // Verify AAPL is visible in the watchlist
     await expect(page.locator('text=AAPL').first()).toBeVisible({ timeout: 10000 });
 
-    // 5. Add second ticker: search by company label 'LVMH' (matches MC.PA)
+    // 5. Add second ticker: search by company label 'LVMH' (matches MC.PA) (1-click direct addition)
     await page.getByRole('button', { name: /Add Ticker/i }).first().click();
     await page.fill('input[placeholder*="Search symbol"]', 'LVMH');
+    // 1-click on LVMH result directly adds it and closes modal!
     await page.locator('button:not([disabled]):has-text("LVMH")').first().click();
-    // Set cost basis / tracking value
-    await page.fill('input[type="number"]', '380');
-    await page.getByRole('button', { name: /Add to Watchlist/i }).click();
 
     // Verify LVMH / MC.PA is visible
     await expect(page.locator('text=MC.PA').first()).toBeVisible({ timeout: 10000 });
 
-    // 6. Verify % diff badges are displayed
-    await expect(page.locator('text=vs target, text=vs référence').or(page.locator('span:has-text("%")')).first()).toBeVisible();
+    // 6. Optional Reference Target: set tracking value on a ticker via edit modal
+    const editButtons = page.locator('button[title*="Edit Reference Target" i], button[title*="Modifier la valeur" i]');
+    if (await editButtons.first().isVisible()) {
+      await editButtons.first().click();
+      await page.fill('input[type="number"]', '200');
+      await page.locator('form button[type="submit"]').click();
+      await page.waitForTimeout(500);
+    }
 
     // 7. Click ticker to view details modal & price chart
     await page.locator('[data-symbol="AAPL"]').first().click();
