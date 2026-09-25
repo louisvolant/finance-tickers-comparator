@@ -73,15 +73,17 @@ export function TickerRow({
         </div>
       </td>
 
-      {/* Label (bold, top) & Ticker Symbol (regular, underneath) */}
+      {/* Label (bold) followed by Ticker Symbol (regular, non-bold) & Exchange underneath */}
       <td className="py-1.5 px-3">
-        <p className="font-bold text-sm text-white truncate max-w-[220px] group-hover:text-emerald-400 transition">
-          {quote?.name || ticker.name}
-        </p>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="text-xs text-slate-300 font-normal tracking-wide">
+        <div className="flex items-center gap-1.5 truncate max-w-[220px]">
+          <span className="font-bold text-sm text-white truncate group-hover:text-emerald-400 transition">
+            {quote?.name || ticker.name}
+          </span>
+          <span className="text-xs text-slate-400 font-normal shrink-0">
             {ticker.symbol}
           </span>
+        </div>
+        <div className="flex items-center gap-1.5 mt-0.5">
           <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-800/80 text-slate-400 border border-slate-700/50">
             {quote?.exchange || 'Stock'}
           </span>

@@ -12,19 +12,21 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - Elevated (30x - 40x): warm amber
   - High (40x - 60x): orange
   - Stretched (> 60x): deep red / rose
-- **Ultra-Compact Inverted Mobile Cards & Desktop Hierarchy**:
-  - Company/asset **label displayed in bold on top**, with Current P/E and Forward P/E pills beside it.
-  - Ticker **symbol displayed underneath in regular font** alongside the exchange badge.
-  - Current price and daily change (% evolution) are docked top-right with extended session indicators.
-  - Personal cost basis / target price is streamlined away from collapsed cards into the opened details modal right next to the "Equity" pill.
+- **Ultra-Compact Mobile Cards & Clear Hierarchy**:
+  - **Line 1 (Top)**: Company/asset **label displayed in bold**, immediately followed by the ticker **symbol in regular font** (e.g. **Apple Inc.** `AAPL`).
+  - **Line 2 (Bottom)**: Exchange badge (e.g. `PAR`, `NMS`, `Stock`) followed by **Current P/E** (`PE 32.4x`) and **Forward P/E** (`Fwd 28.1x`).
+  - **Right side**: Current price and daily change (% evolution) with extended session indicators (`🌅` / `🌙`).
+  - **Details Modal**: Personal cost basis / target price is streamlined away from collapsed cards into the opened details modal right next to the "Equity" pill.
 - **Pre-Market, After-Hours & Sunday Futures Indicator**: Displays real-time extended session percentage indicators directly beside daily change (e.g. `▼ -0.41% (🌅 +0.03%)` or `(🌙 -0.12%)`). Essential for monitoring after-hours earnings reports, early morning pre-market trading, and Sunday evening futures pre-trends before Monday market open. Drops below **-0.20%** are highlighted in deep red / rose.
 - **PWA Long-Press Drag-and-Drop Reordering with Haptic Feedback**: Press and hold any compressed ticker card (250ms delay, 5px movement tolerance) to pick it up in elevation/overlay (`DragOverlay` with subtle scale, shadow, and emerald border) and drag it to reorder.
   - Native vertical touch scrolling is preserved thanks to `touch-action: pan-y` and tight tolerance threshold.
   - Haptic feedback is triggered on drag initiation via `navigator.vibrate(15)` on Android/Chrome and via the hidden iOS Safari `<input type="checkbox" switch />` trigger for the Apple Taptic Engine.
   - Seamless exit: releasing the finger (`onDragEnd`) immediately drops the card in place, recalculates order positions, and persists order locally in IndexedDB and remotely in Cloudflare KV without requiring an explicit exit button.
-- **1-Click Instant Ticker Addition**: Adding tickers from search is immediate with a single click. No intermediate modal or mandatory forms. Users can jump straight to building their portfolio without roadblocks.
+- **1-Click Instant Ticker Addition & Bottom Add Button**: Adding tickers from search is immediate with a single click. In addition to the quick search `+` button, an explicit "+ Add Ticker" button is conveniently placed at the bottom of the watchlist right above the privacy notice.
 - **100% Private & Zero User Tracking**: No user tracking or behavioral telemetry. The "tracking value" is strictly an optional personal cost basis or target purchase price chosen and entered solely by the user (or left completely empty).
-- **Dedicated Watchlist Control Bar**: The Display Mode Selector and manual **Refresh button** are positioned right-aligned on the watchlist header line (`Ma liste de tickers / X tickers`) for instant single-handed access.
+- **Streamlined Watchlist Controls**:
+  - **Title Row**: `Ma liste de tickers (X tickers)` on the left with the **Display Mode Selector** docked right.
+  - **Action Row**: Search bar and `+` button docked left, and manual **Refresh button** docked right.
 - **Comprehensive Forward P/E Educational Guide**: Integrated breakdown detailing how Forward P/E is calculated, Wall Street & European analyst consensus mechanisms, forecast horizons (NTM / next FY), Trailing vs. Forward comparisons, and key analytical limitations.
 - **Optional Reference Target & % Diff**: Add or update your cost basis anytime directly from the ticker row, mobile card details, or dedicated modal. Ticker-Tracker automatically highlights the percentage variance (`% Diff`) in real time, or displays clean pricing without any target requirements.
 - **Zero-Latency Mobile & Desktop Startup (IndexedDB)**: Saved tickers and quotes are stored locally in IndexedDB, rendering your dashboard instantly upon opening your phone, with background stale-while-revalidate reloads.

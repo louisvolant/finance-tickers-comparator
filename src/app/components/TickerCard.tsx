@@ -46,21 +46,34 @@ export function TickerCard({
       onClick={() => onClick(ticker)}
       className="px-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 active:scale-[0.99] transition cursor-pointer select-none flex items-center justify-between gap-3 shadow-sm"
     >
-      {/* Left side: Label in bold on top, Current P/E pill, Forward P/E pill, and Ticker underneath (non-bold) */}
+      {/* Left side:
+          Line 1: Label/title in bold followed by ticker symbol (non-bold)
+          Line 2: Exchange ("PAR", "NMS", etc.) followed by Current PE and Forward PE */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+        {/* Line 1: Label in bold + Ticker symbol non-bold */}
+        <div className="flex items-center gap-1.5 sm:gap-2 truncate">
           <span className="font-bold text-sm sm:text-base text-white tracking-tight truncate max-w-[160px] sm:max-w-[260px]">
             {quote?.name || ticker.name}
           </span>
+          <span className="text-xs text-slate-400 font-normal shrink-0">
+            {ticker.symbol}
+          </span>
+        </div>
 
-          {/* Current PE on the same line */}
+        {/* Line 2: Exchange ("PAR", "NMS", etc.) + Current P/E + Forward P/E */}
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700/50">
+            {quote?.exchange || 'Stock'}
+          </span>
+
+          {/* Current PE on line 2 */}
           {quote?.trailingPE ? (
-            <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
               PE {formatMultiple(quote.trailingPE)}
             </span>
           ) : null}
 
-          {/* Forward PE pill with customized valuation color tiers */}
+          {/* Forward PE on line 2 */}
           {quote?.forwardPE ? (
             <span
               title={`Forward P/E: ${formatMultiple(quote.forwardPE)}`}
@@ -71,14 +84,6 @@ export function TickerCard({
               Fwd {formatMultiple(quote.forwardPE)}
             </span>
           ) : null}
-        </div>
-
-        {/* Ticker Symbol & Exchange underneath, non-bold */}
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 truncate mt-0.5">
-          <span className="text-xs text-slate-300 font-normal tracking-wide">{ticker.symbol}</span>
-          <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-800/80 text-slate-400 border border-slate-700/50">
-            {quote?.exchange || 'Stock'}
-          </span>
         </div>
       </div>
 

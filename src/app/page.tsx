@@ -485,8 +485,8 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Dashboard Title & Quick Search Bar */}
-        <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+        {/* Dashboard Title & Display Mode Selector */}
+        <div className="flex items-center justify-between gap-3 mb-3">
           <div>
             <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
               <span>{t('watchlist.title')}</span>
@@ -499,13 +499,23 @@ function Dashboard() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 ml-auto">
+          <div className="shrink-0">
+            <DisplayModeSelector
+              currentMode={displayMode}
+              onModeChange={handleDisplayModeChange}
+            />
+          </div>
+        </div>
+
+        {/* Quick Search Bar & Refresh Row */}
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setSearchModalOpen(true)}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 text-xs transition cursor-pointer"
             >
               <Search className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t('nav.searchPrompt')}</span>
+              <span>{t('nav.searchPrompt')}</span>
             </button>
             <button
               onClick={() => setSearchModalOpen(true)}
@@ -514,23 +524,20 @@ function Dashboard() {
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span className="hidden sm:inline">{t('nav.addTicker')}</span>
             </button>
-            <DisplayModeSelector
-              currentMode={displayMode}
-              onModeChange={handleDisplayModeChange}
-            />
-            {/* Refresh Quotes: moved right next to the display mode selector */}
-            <button
-              onClick={refreshData}
-              disabled={refreshing}
-              title={t('nav.refreshTitle')}
-              aria-label={t('nav.refreshTitle')}
-              data-testid="refresh-quotes-button"
-              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-850 hover:border-slate-700 transition flex items-center gap-1.5 text-xs font-medium cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-emerald-400' : ''}`} />
-              <span className="hidden sm:inline">{t('nav.refresh')}</span>
-            </button>
           </div>
+
+          {/* Refresh Quotes: calé à droite */}
+          <button
+            onClick={refreshData}
+            disabled={refreshing}
+            title={t('nav.refreshTitle')}
+            aria-label={t('nav.refreshTitle')}
+            data-testid="refresh-quotes-button"
+            className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-850 hover:border-slate-700 transition flex items-center gap-1.5 text-xs font-medium cursor-pointer shrink-0"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-emerald-400' : ''}`} />
+            <span className="hidden sm:inline">{t('nav.refresh')}</span>
+          </button>
         </div>
 
         {/* Main Content: Desktop Table & Mobile Cards */}
@@ -752,6 +759,17 @@ function Dashboard() {
                 </div>
               </div>
             )}
+
+            {/* Bottom Add Ticker Button */}
+            <div className="mt-5 flex justify-center sm:justify-start">
+              <button
+                onClick={() => setSearchModalOpen(true)}
+                className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition shadow-lg shadow-emerald-500/20 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>{t('nav.addTicker')}</span>
+              </button>
+            </div>
 
             {/* Discreet Zero User Tracking Footnote at the bottom of the tickers list */}
             <div className="mt-4 rounded-xl bg-slate-900/40 border border-slate-800/80 p-3 flex items-center gap-2.5 text-xs text-slate-400">

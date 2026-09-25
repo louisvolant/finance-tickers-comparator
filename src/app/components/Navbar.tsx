@@ -3,16 +3,16 @@
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/context/I18nContext';
-import { Plus, LogIn, LogOut, TrendingUp, Sparkles } from 'lucide-react';
+import { LogIn, LogOut, TrendingUp, Sparkles } from 'lucide-react';
 
 interface NavbarProps {
-  onAddTickerClick: () => void;
+  onAddTickerClick?: () => void;
   onRefreshClick?: () => void;
   refreshing?: boolean;
   onOpenSettings?: () => void;
 }
 
-export function Navbar({ onAddTickerClick, onOpenSettings }: NavbarProps) {
+export function Navbar({ onOpenSettings }: NavbarProps) {
   const { user, loading, openAuthModal, logout } = useAuth();
   const { t } = useI18n();
 
@@ -41,15 +41,6 @@ export function Navbar({ onAddTickerClick, onOpenSettings }: NavbarProps) {
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Add Ticker Button */}
-          <button
-            onClick={onAddTickerClick}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs sm:text-sm transition shadow-lg shadow-emerald-500/20 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>{t('nav.addTicker')}</span>
-          </button>
-
           {/* Auth State */}
           {!loading && (
             <>
