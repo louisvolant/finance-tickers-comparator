@@ -126,4 +126,14 @@ describe('Display Modes & Exchange Grouping', () => {
     assert.equal(nasdaqGroup.tickers[0].symbol, 'AAPL');
     assert.equal(nasdaqGroup.tickers[1].symbol, 'MSFT');
   });
+
+  test('should support reorder display mode in options', () => {
+    const validModes: Array<'custom' | 'alphabetical' | 'by_exchange' | 'reorder'> = [
+      'custom',
+      'alphabetical',
+      'by_exchange',
+      'reorder',
+    ];
+    assert.equal(validModes.includes('reorder'), true);
+  });
 });

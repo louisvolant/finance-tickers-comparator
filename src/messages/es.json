@@ -177,7 +177,9 @@
   "display": {
     "label": "Vista",
     "custom": "Lista ordenada",
-    "customDesc": "Orden personalizado (Arrastrar y soltar)",
+    "customDesc": "Orden personalizado",
+    "reorder": "Reorganizar",
+    "reorderDesc": "Reordenar con flechas arriba / abajo",
     "alphabetical": "Orden alfabético",
     "alphabeticalDesc": "Ordenado por símbolo A → Z",
     "byExchange": "Por mercado de cotización",

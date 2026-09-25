@@ -177,7 +177,9 @@
   "display": {
     "label": "Display View",
     "custom": "Custom Order",
-    "customDesc": "Personalized list (Drag & drop)",
+    "customDesc": "Personalized list",
+    "reorder": "Reorganize",
+    "reorderDesc": "Reorder with up / down arrows",
     "alphabetical": "Alphabetical (A → Z)",
     "alphabeticalDesc": "Sorted by ticker symbol",
     "byExchange": "By Trading Market",

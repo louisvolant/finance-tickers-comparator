@@ -12,28 +12,8 @@ import { AccountSettingsModal } from './components/AccountSettingsModal';
 import { Footer } from './components/Footer';
 import { TickerRow } from './components/TickerRow';
 import { TickerCard } from './components/TickerCard';
-import { SortableTickerCard } from './components/SortableTickerCard';
 import { DisplayModeSelector } from './components/DisplayModeSelector';
 import { DisplayMode, groupTickersByExchange } from '@/lib/displayModes';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragStartEvent,
-  DragOverlay,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { triggerHapticFeedback } from '@/lib/haptic';
 import {
   getLocalTickers,
   saveLocalTickers,
@@ -66,14 +46,13 @@ function Dashboard() {
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState<UserTicker | null>(null);
   const [editingTicker, setEditingTicker] = useState<UserTicker | null>(null);
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('custom');
 
   // Load user's preferred display mode from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('ticker_tracker_display_mode') as DisplayMode;
-      if (saved === 'custom' || saved === 'alphabetical' || saved === 'by_exchange') {
+      if (saved === 'custom' || saved === 'alphabetical' || saved === 'by_exchange' || saved === 'reorder') {
         setDisplayMode(saved);
       }
     } catch {}
@@ -99,66 +78,6 @@ function Dashboard() {
     }
     return [];
   }, [tickers, displayMode]);
-
-  // Setup sensors with activation constraints:
-  // - Desktop: pointer distance 8px before initiating drag
-  // - Mobile: 250ms long press, 5px tolerance (keeps native vertical scrolling intact)
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-    triggerHapticFeedback();
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveId(null);
-
-    if (over && active.id !== over.id) {
-      const oldIndex = tickers.findIndex((t) => t.id === active.id);
-      const newIndex = tickers.findIndex((t) => t.id === over.id);
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newOrder = arrayMove(tickers, oldIndex, newIndex);
-        setTickers(newOrder);
-
-        const orderedIds = newOrder.map((t) => t.id);
-        await reorderLocalTickers(orderedIds);
-
-        if (user) {
-          try {
-            await fetch('/api/tickers/reorder', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ orderedIds }),
-            });
-          } catch (err) {
-            console.error('Failed to sync reorder to server:', err);
-          }
-        }
-      }
-    }
-  };
-
-  const handleDragCancel = () => {
-    setActiveId(null);
-  };
-
-  const activeTicker = activeId ? tickers.find((t) => t.id === activeId) : null;
 
   // Online / offline detector
   useEffect(() => {
@@ -708,54 +627,39 @@ function Dashboard() {
                   </table>
                 </div>
 
-                {/* Mobile Cards View (< 768px) with Long-Press Drag & Drop */}
-                <div className="md:hidden">
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    onDragCancel={handleDragCancel}
-                  >
-                    <SortableContext
-                      items={tickers.map((t) => t.id)}
-                      strategy={verticalListSortingStrategy}
+                {/* Reorder Mode Banner */}
+                {displayMode === 'reorder' && (
+                  <div className="mb-3.5 px-3.5 py-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs text-purple-300 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <ArrowUpDown className="w-4 h-4 text-purple-400 shrink-0" />
+                      <span className="font-medium">{t('display.reorderDesc')}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDisplayModeChange('custom')}
+                      className="px-2.5 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-white font-semibold text-xs transition cursor-pointer"
                     >
-                      <div className="space-y-3">
-                        {tickers.map((ticker, idx) => (
-                          <SortableTickerCard
-                            key={ticker.id}
-                            ticker={ticker}
-                            index={idx}
-                            totalCount={tickers.length}
-                            onMoveUp={() => handleMove(idx, 'up')}
-                            onMoveDown={() => handleMove(idx, 'down')}
-                            onClick={(t) => setSelectedTicker(t)}
-                            onEdit={(t) => setEditingTicker(t)}
-                            onDelete={(t) => handleDeleteTicker(t)}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
+                      OK
+                    </button>
+                  </div>
+                )}
 
-                    {/* Elevated Drag Overlay on Long-Press Surimpression */}
-                    <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
-                      {activeTicker ? (
-                        <div className="scale-[1.03] shadow-2xl ring-2 ring-emerald-400 bg-slate-900 rounded-xl opacity-95 cursor-grabbing pointer-events-none transition-transform">
-                          <TickerCard
-                            ticker={activeTicker}
-                            index={tickers.findIndex((t) => t.id === activeTicker.id)}
-                            totalCount={tickers.length}
-                            onMoveUp={() => {}}
-                            onMoveDown={() => {}}
-                            onClick={() => {}}
-                            onEdit={() => {}}
-                            onDelete={() => {}}
-                          />
-                        </div>
-                      ) : null}
-                    </DragOverlay>
-                  </DndContext>
+                {/* Mobile Cards View (< 768px) with Up/Down Buttons in Reorder Mode */}
+                <div className="md:hidden space-y-2.5">
+                  {tickers.map((ticker, idx) => (
+                    <TickerCard
+                      key={ticker.id}
+                      ticker={ticker}
+                      index={idx}
+                      totalCount={tickers.length}
+                      isReorderMode={displayMode === 'reorder'}
+                      onMoveUp={() => handleMove(idx, 'up')}
+                      onMoveDown={() => handleMove(idx, 'down')}
+                      onClick={(t) => setSelectedTicker(t)}
+                      onEdit={(t) => setEditingTicker(t)}
+                      onDelete={(t) => handleDeleteTicker(t)}
+                    />
+                  ))}
                 </div>
               </div>
             )}

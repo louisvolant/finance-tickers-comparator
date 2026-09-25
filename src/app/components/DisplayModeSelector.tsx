@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ListOrdered, ArrowDownAZ, Globe, ChevronDown, Check } from 'lucide-react';
+import { ListOrdered, ArrowDownAZ, Globe, ArrowUpDown, ChevronDown, Check } from 'lucide-react';
 import { DisplayMode } from '@/lib/displayModes';
 import { useI18n } from '@/context/I18nContext';
 
@@ -39,6 +39,12 @@ export function DisplayModeSelector({ currentMode, onModeChange }: DisplayModeSe
       labelKey: 'display.custom',
       descKey: 'display.customDesc',
       icon: <ListOrdered className="w-4 h-4 text-emerald-400 shrink-0" />,
+    },
+    {
+      id: 'reorder',
+      labelKey: 'display.reorder',
+      descKey: 'display.reorderDesc',
+      icon: <ArrowUpDown className="w-4 h-4 text-purple-400 shrink-0" />,
     },
     {
       id: 'alphabetical',

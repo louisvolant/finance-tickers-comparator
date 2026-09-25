@@ -18,10 +18,11 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - **Right side**: Current price and daily change (% evolution) with extended session indicators (`🌅` / `🌙`).
   - **Details Modal**: Personal cost basis / target price is streamlined away from collapsed cards into the opened details modal right next to the "Equity" pill.
 - **Pre-Market, After-Hours & Sunday Futures Indicator**: Displays real-time extended session percentage indicators directly beside daily change (e.g. `▼ -0.41% (🌅 +0.03%)` or `(🌙 -0.12%)`). Essential for monitoring after-hours earnings reports, early morning pre-market trading, and Sunday evening futures pre-trends before Monday market open. Drops below **-0.20%** are highlighted in deep red / rose.
-- **PWA Long-Press Drag-and-Drop Reordering with Haptic Feedback**: Press and hold any compressed ticker card (250ms delay, 5px movement tolerance) to pick it up in elevation/overlay (`DragOverlay` with subtle scale, shadow, and emerald border) and drag it to reorder.
-  - Native vertical touch scrolling is preserved thanks to `touch-action: pan-y` and tight tolerance threshold.
-  - Haptic feedback is triggered on drag initiation via `navigator.vibrate(15)` on Android/Chrome and via the hidden iOS Safari `<input type="checkbox" switch />` trigger for the Apple Taptic Engine.
-  - Seamless exit: releasing the finger (`onDragEnd`) immediately drops the card in place, recalculates order positions, and persists order locally in IndexedDB and remotely in Cloudflare KV without requiring an explicit exit button.
+- **Reliable Reorganization Mode (Flèches Haut / Bas)**: Select "Reorganize" (`Réorganisation`) from the display dropdown to enter ordering mode:
+  - The right-hand price block on each mobile card is dynamically replaced with intuitive **Up / Down arrow buttons** (`ChevronUp` / `ChevronDown`).
+  - Tapping up/down immediately reorders tickers without any touch gesture conflicts between scrolling, tapping, and long-presses.
+  - Position changes are saved instantly in local IndexedDB and synchronized to Cloudflare KV for registered accounts.
+  - An inline banner provides single-tap confirmation (`OK`) to return to standard pricing view.
 - **1-Click Instant Ticker Addition & Bottom Add Button**: Adding tickers from search is immediate with a single click. In addition to the quick search `+` button, an explicit "+ Add Ticker" button is conveniently placed at the bottom of the watchlist right above the privacy notice.
 - **100% Private & Zero User Tracking**: No user tracking or behavioral telemetry. The "tracking value" is strictly an optional personal cost basis or target purchase price chosen and entered solely by the user (or left completely empty).
 - **Streamlined Watchlist Controls**:
@@ -33,8 +34,9 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
 - **Progressive Web App (PWA)**: Installable on iOS, Android, and Desktop with offline caching via Service Worker and web app manifest.
 - **Multimodal Search (Ticker, Label & ISIN)**: Search stocks by symbol (e.g. `PUST`, `WPEA`), company name / ETF label (e.g. `LVMH`, `AIRBUS`, `SCHNEIDER`), or official ISIN codes (e.g. `FR0011871110`, `FR001400Q9V2`), supplemented by live Yahoo Finance search.
 - **Interactive Financial Stats & Charts**: Detailed modal with historical price trends, 52-week ranges, dividend yields, EPS, market capitalization, and beta.
-- **Flexible Display & Sorting Modes (Custom, Alphabetical, By Trading Exchange)**: Switch seamlessly with a dropdown button stacked right beside the search bar and `+` button:
-  - **Custom Order (Liste ordonnée)**: Manual / drag-and-drop reordered sequence saved to IndexedDB and Cloudflare KV.
+- **Flexible Display & Sorting Modes (Custom, Reorganize, Alphabetical, By Trading Exchange)**: Switch seamlessly with the dropdown button docked right on the title bar:
+  - **Custom Order (Liste ordonnée)**: User-defined sequence saved to IndexedDB and Cloudflare KV.
+  - **Reorganize (Réorganisation)**: Tactile up/down reorder buttons on each ticker card.
   - **Alphabetical (A → Z)**: Global alphabetical sorting by ticker symbol.
   - **By Trading Market (Par place de cotation)**: Intelligently groups tickers by exchange system (`Euronext Paris`, `NASDAQ`, `NYSE`, `Deutsche Börse XETRA`, `London Stock Exchange`, etc.) with stylish header badges, and sorts tickers alphabetically inside each exchange.
   - Choice is remembered locally across browser sessions.

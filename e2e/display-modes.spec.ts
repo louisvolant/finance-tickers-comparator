@@ -29,6 +29,17 @@ test.describe('Display Modes Selector', () => {
       page.getByText('Euronext Paris').or(page.getByText('PARIS')).or(page.getByText('NASDAQ')).first()
     ).toBeVisible({ timeout: 5000 });
 
+    // Switch to Reorganize Mode
+    await displayBtn.click();
+    const reorderOption = page.getByText(/Réorganisation|Reorganize/i).first();
+    await expect(reorderOption).toBeVisible();
+    await reorderOption.click();
+    await page.waitForTimeout(400);
+
+    // Verify reorder buttons or banner are visible
+    const reorderBanner = page.getByText(/flèches haut \/ bas|up \/ down arrows/i).first();
+    await expect(reorderBanner).toBeVisible({ timeout: 5000 });
+
     // Switch back to Custom Order
     await displayBtn.click();
     const customOption = page.getByText(/Liste ordonnée|Custom Order/i).first();

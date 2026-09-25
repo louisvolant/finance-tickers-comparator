@@ -177,7 +177,9 @@
   "display": {
     "label": "Affichage",
     "custom": "Liste ordonnée",
-    "customDesc": "Ordre personnalisé (Drag & Drop)",
+    "customDesc": "Ordre personnalisé",
+    "reorder": "Réorganisation",
+    "reorderDesc": "Réordonner avec flèches haut / bas",
     "alphabetical": "Ordre alphabétique",
     "alphabeticalDesc": "Trié par symbole A → Z",
     "byExchange": "Par place de cotation",

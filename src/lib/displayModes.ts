@@ -1,6 +1,6 @@
 import { UserTicker } from './types';
 
-export type DisplayMode = 'custom' | 'alphabetical' | 'by_exchange';
+export type DisplayMode = 'custom' | 'alphabetical' | 'by_exchange' | 'reorder';
 
 export interface ExchangeInfo {
   id: string;

@@ -177,7 +177,9 @@
   "display": {
     "label": "Ansicht",
     "custom": "Benutzerdefinierte Reihenfolge",
-    "customDesc": "Eigene Liste (Drag & Drop)",
+    "customDesc": "Eigene Liste",
+    "reorder": "Neu anordnen",
+    "reorderDesc": "Mit Pfeilen nach oben / unten sortieren",
     "alphabetical": "Alphabetisch (A → Z)",
     "alphabeticalDesc": "Nach Symbol sortiert",
     "byExchange": "Nach Handelsplatz",
