@@ -12,6 +12,26 @@ import { AccountSettingsModal } from './components/AccountSettingsModal';
 import { Footer } from './components/Footer';
 import { TickerRow } from './components/TickerRow';
 import { TickerCard } from './components/TickerCard';
+import { SortableTickerCard } from './components/SortableTickerCard';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { triggerHapticFeedback } from '@/lib/haptic';
 import {
   getLocalTickers,
   saveLocalTickers,
@@ -43,6 +63,67 @@ function Dashboard() {
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState<UserTicker | null>(null);
   const [editingTicker, setEditingTicker] = useState<UserTicker | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Setup sensors with activation constraints:
+  // - Desktop: pointer distance 8px before initiating drag
+  // - Mobile: 250ms long press, 5px tolerance (keeps native vertical scrolling intact)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+    triggerHapticFeedback();
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (over && active.id !== over.id) {
+      const oldIndex = tickers.findIndex((t) => t.id === active.id);
+      const newIndex = tickers.findIndex((t) => t.id === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newOrder = arrayMove(tickers, oldIndex, newIndex);
+        setTickers(newOrder);
+
+        const orderedIds = newOrder.map((t) => t.id);
+        await reorderLocalTickers(orderedIds);
+
+        if (user) {
+          try {
+            await fetch('/api/tickers/reorder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderedIds }),
+            });
+          } catch (err) {
+            console.error('Failed to sync reorder to server:', err);
+          }
+        }
+      }
+    }
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
+  };
+
+  const activeTicker = activeId ? tickers.find((t) => t.id === activeId) : null;
 
   // Online / offline detector
   useEffect(() => {
@@ -441,21 +522,54 @@ function Dashboard() {
               </table>
             </div>
 
-            {/* Mobile Cards View (< 768px) */}
-            <div className="md:hidden space-y-3">
-              {tickers.map((ticker, idx) => (
-                <TickerCard
-                  key={ticker.id}
-                  ticker={ticker}
-                  index={idx}
-                  totalCount={tickers.length}
-                  onMoveUp={() => handleMove(idx, 'up')}
-                  onMoveDown={() => handleMove(idx, 'down')}
-                  onClick={(t) => setSelectedTicker(t)}
-                  onEdit={(t) => setEditingTicker(t)}
-                  onDelete={(t) => handleDeleteTicker(t)}
-                />
-              ))}
+            {/* Mobile Cards View (< 768px) with Long-Press Drag & Drop */}
+            <div className="md:hidden">
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
+              >
+                <SortableContext
+                  items={tickers.map((t) => t.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-3">
+                    {tickers.map((ticker, idx) => (
+                      <SortableTickerCard
+                        key={ticker.id}
+                        ticker={ticker}
+                        index={idx}
+                        totalCount={tickers.length}
+                        onMoveUp={() => handleMove(idx, 'up')}
+                        onMoveDown={() => handleMove(idx, 'down')}
+                        onClick={(t) => setSelectedTicker(t)}
+                        onEdit={(t) => setEditingTicker(t)}
+                        onDelete={(t) => handleDeleteTicker(t)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+
+                {/* Elevated Drag Overlay on Long-Press Surimpression */}
+                <DragOverlay dropAnimation={{ duration: 200, easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)' }}>
+                  {activeTicker ? (
+                    <div className="scale-[1.03] shadow-2xl ring-2 ring-emerald-400 bg-slate-900 rounded-xl opacity-95 cursor-grabbing pointer-events-none transition-transform">
+                      <TickerCard
+                        ticker={activeTicker}
+                        index={tickers.findIndex((t) => t.id === activeTicker.id)}
+                        totalCount={tickers.length}
+                        onMoveUp={() => {}}
+                        onMoveDown={() => {}}
+                        onClick={() => {}}
+                        onEdit={() => {}}
+                        onDelete={() => {}}
+                      />
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
             </div>
 
             {/* Discreet Zero User Tracking Footnote at the bottom of the tickers list */}
@@ -597,6 +711,18 @@ function Dashboard() {
         isOpen={!!editingTicker}
         onClose={() => setEditingTicker(null)}
         onSave={handleSaveTracking}
+      />
+
+      {/* Hidden iOS Safari Switch element for haptic Taptic Engine click */}
+      <input
+        id="ios-haptic-trigger"
+        type="checkbox"
+        // @ts-expect-error iOS Safari switch attribute
+        switch=""
+        style={{ position: 'fixed', top: -9999, left: -9999, opacity: 0, pointerEvents: 'none' }}
+        tabIndex={-1}
+        aria-hidden="true"
+        readOnly
       />
     </div>
   );
