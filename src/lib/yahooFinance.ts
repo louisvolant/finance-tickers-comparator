@@ -7,7 +7,7 @@ const yf = new YahooFinance({
   suppressNotices: ['yahooSurvey'],
 });
 
-const QUOTE_CACHE_TTL_SEC = 90; // Cache quotes for 90 seconds in KV
+const QUOTE_CACHE_TTL_SEC = 30; // Cache quotes for 30 seconds in KV
 const SEARCH_CACHE_TTL_SEC = 3600; // Cache search queries for 1 hour in KV
 const CHART_CACHE_TTL_SEC = 600; // Cache chart data for 10 minutes in KV
 

@@ -30,10 +30,6 @@ export function TickerCard({
   const { t } = useI18n();
   const quote = ticker.quote;
   const currentPrice = quote?.price ?? 0;
-  const trackingVal = ticker.trackingValue;
-  const hasTracking = trackingVal !== null && trackingVal !== undefined && trackingVal > 0;
-  const diffPercent = hasTracking ? ((currentPrice - trackingVal!) / trackingVal!) * 100 : 0;
-  const isPositiveDiff = diffPercent >= 0;
   const isPositiveToday = (quote?.changePercent ?? 0) >= 0;
 
   // Extended session (Pre-market 🌅 / After-hours 🌙 / Futures)
@@ -50,21 +46,19 @@ export function TickerCard({
       onClick={() => onClick(ticker)}
       className="px-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 active:scale-[0.99] transition cursor-pointer select-none flex items-center justify-between gap-3 shadow-sm"
     >
-      {/* Left side: Symbol, Current P/E pill, Forward P/E pill, Name & optional Target Diff */}
+      {/* Left side: Label in bold on top, Current P/E pill, Forward P/E pill, and Ticker underneath (non-bold) */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-          <span className="font-extrabold text-base text-white tracking-wide">{ticker.symbol}</span>
+          <span className="font-bold text-sm sm:text-base text-white tracking-tight truncate max-w-[160px] sm:max-w-[260px]">
+            {quote?.name || ticker.name}
+          </span>
 
           {/* Current PE on the same line */}
           {quote?.trailingPE ? (
             <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
               PE {formatMultiple(quote.trailingPE)}
             </span>
-          ) : (
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700/50">
-              {quote?.exchange || 'Stock'}
-            </span>
-          )}
+          ) : null}
 
           {/* Forward PE pill with customized valuation color tiers */}
           {quote?.forwardPE ? (
@@ -77,29 +71,14 @@ export function TickerCard({
               Fwd {formatMultiple(quote.forwardPE)}
             </span>
           ) : null}
-
-          {/* Target % diff badge if set */}
-          {hasTracking && (
-            <span
-              className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
-                isPositiveDiff
-                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                  : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-              }`}
-            >
-              {formatPercent(diffPercent)}
-            </span>
-          )}
         </div>
 
-        {/* Company Name & optional ref target */}
+        {/* Ticker Symbol & Exchange underneath, non-bold */}
         <div className="flex items-center gap-1.5 text-xs text-slate-400 truncate mt-0.5">
-          <span className="truncate max-w-[180px] sm:max-w-[280px]">{quote?.name || ticker.name}</span>
-          {hasTracking && (
-            <span className="text-[10px] text-slate-500 shrink-0">
-              ({t('watchlist.baseline')}: {formatCurrency(trackingVal!, quote?.currency)})
-            </span>
-          )}
+          <span className="text-xs text-slate-300 font-normal tracking-wide">{ticker.symbol}</span>
+          <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-800/80 text-slate-400 border border-slate-700/50">
+            {quote?.exchange || 'Stock'}
+          </span>
         </div>
       </div>
 

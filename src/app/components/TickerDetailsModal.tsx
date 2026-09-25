@@ -130,13 +130,27 @@ export function TickerDetailsModal({
               <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700/60">
                 {quote?.exchange || 'Stock'}
               </span>
-              {quote?.quoteType && (
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800/60 text-slate-400">
-                  {quote.quoteType}
-                </span>
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800/60 text-slate-400 uppercase">
+                {quote?.quoteType || 'Equity'}
+              </span>
+              {/* Personal tracking ref & diff badge right to the right of Equity */}
+              {hasTracking && (
+                <button
+                  type="button"
+                  onClick={() => onEditTracking(ticker)}
+                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold border transition cursor-pointer hover:opacity-90 ${
+                    isPositiveDiff
+                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                      : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                  }`}
+                  title={`${t('details.editTracking')}: ${formatCurrency(trackingVal!, quote?.currency)}`}
+                >
+                  <span>Ref: {formatCurrency(trackingVal!, quote?.currency)}</span>
+                  <span>({formatPercent(diffPercent)})</span>
+                </button>
               )}
             </div>
-            <p className="text-xs text-slate-400 mt-1">{quote?.name || ticker.name}</p>
+            <p className="text-xs text-slate-400 mt-1 font-medium">{quote?.name || ticker.name}</p>
           </div>
 
           {/* Quick Action Buttons */}

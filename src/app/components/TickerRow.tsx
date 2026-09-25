@@ -73,17 +73,19 @@ export function TickerRow({
         </div>
       </td>
 
-      {/* Symbol & Name */}
+      {/* Label (bold, top) & Ticker Symbol (regular, underneath) */}
       <td className="py-1.5 px-3">
-        <div className="flex items-center gap-2">
-          <span className="font-extrabold text-sm text-white tracking-wide group-hover:text-emerald-400 transition">
+        <p className="font-bold text-sm text-white truncate max-w-[220px] group-hover:text-emerald-400 transition">
+          {quote?.name || ticker.name}
+        </p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="text-xs text-slate-300 font-normal tracking-wide">
             {ticker.symbol}
           </span>
-          <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700/50">
+          <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-800/80 text-slate-400 border border-slate-700/50">
             {quote?.exchange || 'Stock'}
           </span>
         </div>
-        <p className="text-xs text-slate-400 truncate max-w-[200px]">{quote?.name || ticker.name}</p>
       </td>
 
       {/* Live Market Price & Day Change */}

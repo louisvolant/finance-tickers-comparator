@@ -3,16 +3,16 @@
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/context/I18nContext';
-import { Plus, RefreshCw, LogIn, LogOut, TrendingUp, Sparkles } from 'lucide-react';
+import { Plus, LogIn, LogOut, TrendingUp, Sparkles } from 'lucide-react';
 
 interface NavbarProps {
   onAddTickerClick: () => void;
-  onRefreshClick: () => void;
-  refreshing: boolean;
+  onRefreshClick?: () => void;
+  refreshing?: boolean;
   onOpenSettings?: () => void;
 }
 
-export function Navbar({ onAddTickerClick, onRefreshClick, refreshing, onOpenSettings }: NavbarProps) {
+export function Navbar({ onAddTickerClick, onOpenSettings }: NavbarProps) {
   const { user, loading, openAuthModal, logout } = useAuth();
   const { t } = useI18n();
 
@@ -41,17 +41,6 @@ export function Navbar({ onAddTickerClick, onRefreshClick, refreshing, onOpenSet
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Refresh Quotes */}
-          <button
-            onClick={onRefreshClick}
-            disabled={refreshing}
-            title={t('nav.refreshTitle')}
-            className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-850 hover:border-slate-700 transition flex items-center gap-2 text-xs font-medium cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-emerald-400' : ''}`} />
-            <span className="hidden sm:inline">{t('nav.refresh')}</span>
-          </button>
-
           {/* Add Ticker Button */}
           <button
             onClick={onAddTickerClick}

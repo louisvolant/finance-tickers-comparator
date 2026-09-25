@@ -47,6 +47,7 @@ import {
   TrendingUp,
   Search,
   Plus,
+  RefreshCw,
   WifiOff,
   Sparkles,
   ShieldCheck,
@@ -410,8 +411,6 @@ function Dashboard() {
     <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col">
       <Navbar
         onAddTickerClick={() => setSearchModalOpen(true)}
-        onRefreshClick={refreshData}
-        refreshing={refreshing}
         onOpenSettings={() => setAccountModalOpen(true)}
       />
 
@@ -500,13 +499,13 @@ function Dashboard() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
             <button
               onClick={() => setSearchModalOpen(true)}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 text-xs transition cursor-pointer"
             >
               <Search className="w-3.5 h-3.5" />
-              <span>{t('nav.searchPrompt')}</span>
+              <span className="hidden sm:inline">{t('nav.searchPrompt')}</span>
             </button>
             <button
               onClick={() => setSearchModalOpen(true)}
@@ -519,6 +518,18 @@ function Dashboard() {
               currentMode={displayMode}
               onModeChange={handleDisplayModeChange}
             />
+            {/* Refresh Quotes: moved right next to the display mode selector */}
+            <button
+              onClick={refreshData}
+              disabled={refreshing}
+              title={t('nav.refreshTitle')}
+              aria-label={t('nav.refreshTitle')}
+              data-testid="refresh-quotes-button"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-850 hover:border-slate-700 transition flex items-center gap-1.5 text-xs font-medium cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-emerald-400' : ''}`} />
+              <span className="hidden sm:inline">{t('nav.refresh')}</span>
+            </button>
           </div>
         </div>
 

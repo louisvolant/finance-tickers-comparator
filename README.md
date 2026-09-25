@@ -4,7 +4,7 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
 
 ## Key Features
 
-- **Real-Time & 15-min Delayed Market Quotes**: Powered by Yahoo Finance (`yahoo-finance2`), covering US stocks, European equities (e.g. `MC.PA`, `AIR.PA`), and ETFs (e.g. `CW8.PA`).
+- **Real-Time & 30s Cached Market Quotes**: Powered by Yahoo Finance (`yahoo-finance2`), covering US stocks, European equities (e.g. `MC.PA`, `AIR.PA`), and index futures (e.g. `NQ=F`, `ES=F`) with an optimized 30-second KV server cache for rapid sync.
 - **Valuation Multiples with Color Tiers**: Instantly displays **Current P/E** (`trailingPE`) and **Forward P/E** (`forwardPE`) on both mobile cards and desktop tables. Forward P/E is dynamically colored by valuation tier:
   - Deep value (< 15x): emerald green
   - Moderate value (15x - 20x): teal
@@ -12,7 +12,11 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - Elevated (30x - 40x): warm amber
   - High (40x - 60x): orange
   - Stretched (> 60x): deep red / rose
-- **Ultra-Compact Mobile & Desktop View**: Designed to fit maximum tickers on mobile screens with ~1/3 of standard card height without decreasing font readability. Current price and daily change (% evolution) are docked top-right; action buttons and deep stats open seamlessly upon tapping.
+- **Ultra-Compact Inverted Mobile Cards & Desktop Hierarchy**:
+  - Company/asset **label displayed in bold on top**, with Current P/E and Forward P/E pills beside it.
+  - Ticker **symbol displayed underneath in regular font** alongside the exchange badge.
+  - Current price and daily change (% evolution) are docked top-right with extended session indicators.
+  - Personal cost basis / target price is streamlined away from collapsed cards into the opened details modal right next to the "Equity" pill.
 - **Pre-Market, After-Hours & Sunday Futures Indicator**: Displays real-time extended session percentage indicators directly beside daily change (e.g. `▼ -0.41% (🌅 +0.03%)` or `(🌙 -0.12%)`). Essential for monitoring after-hours earnings reports, early morning pre-market trading, and Sunday evening futures pre-trends before Monday market open. Drops below **-0.20%** are highlighted in deep red / rose.
 - **PWA Long-Press Drag-and-Drop Reordering with Haptic Feedback**: Press and hold any compressed ticker card (250ms delay, 5px movement tolerance) to pick it up in elevation/overlay (`DragOverlay` with subtle scale, shadow, and emerald border) and drag it to reorder.
   - Native vertical touch scrolling is preserved thanks to `touch-action: pan-y` and tight tolerance threshold.
@@ -20,6 +24,7 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - Seamless exit: releasing the finger (`onDragEnd`) immediately drops the card in place, recalculates order positions, and persists order locally in IndexedDB and remotely in Cloudflare KV without requiring an explicit exit button.
 - **1-Click Instant Ticker Addition**: Adding tickers from search is immediate with a single click. No intermediate modal or mandatory forms. Users can jump straight to building their portfolio without roadblocks.
 - **100% Private & Zero User Tracking**: No user tracking or behavioral telemetry. The "tracking value" is strictly an optional personal cost basis or target purchase price chosen and entered solely by the user (or left completely empty).
+- **Dedicated Watchlist Control Bar**: The Display Mode Selector and manual **Refresh button** are positioned right-aligned on the watchlist header line (`Ma liste de tickers / X tickers`) for instant single-handed access.
 - **Comprehensive Forward P/E Educational Guide**: Integrated breakdown detailing how Forward P/E is calculated, Wall Street & European analyst consensus mechanisms, forecast horizons (NTM / next FY), Trailing vs. Forward comparisons, and key analytical limitations.
 - **Optional Reference Target & % Diff**: Add or update your cost basis anytime directly from the ticker row, mobile card details, or dedicated modal. Ticker-Tracker automatically highlights the percentage variance (`% Diff`) in real time, or displays clean pricing without any target requirements.
 - **Zero-Latency Mobile & Desktop Startup (IndexedDB)**: Saved tickers and quotes are stored locally in IndexedDB, rendering your dashboard instantly upon opening your phone, with background stale-while-revalidate reloads.
