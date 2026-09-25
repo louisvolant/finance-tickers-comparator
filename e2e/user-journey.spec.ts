@@ -54,13 +54,15 @@ test.describe('Full User Journey E2E', () => {
 
     // 7. Click ticker to view details modal & price chart
     await page.locator('[data-symbol="AAPL"]').first().click();
-    await expect(page.getByText(/Price History|Historique des cours/i)).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByText('Price History', { exact: true }).or(page.getByText('Historique des cours', { exact: true }))
+    ).toBeVisible({ timeout: 5000 });
     await expect(page.getByText(/52-Week Range|Fourchette 52 semaines/i)).toBeVisible();
     // Close details modal
     await page.locator('button[aria-label="Close details modal"]').click();
 
     // 8. Reorder tickers: move first ticker down
-    const downButtons = page.locator('button[title="Move down"]');
+    const downButtons = page.locator('button[title*="down" i], button[title*="bas" i]');
     if (await downButtons.first().isVisible()) {
       await downButtons.first().click();
       // Wait for state reorder
@@ -84,7 +86,7 @@ test.describe('Full User Journey E2E', () => {
     await page.locator('button[aria-label="Close account modal"]').click();
 
     // 10. Logout and Login with new password
-    await page.locator('button[title="Log Out"]').first().click();
+    await page.locator('button[data-testid="logout-button"]').first().click();
     await expect(page.getByRole('button', { name: /Sign In|Connexion/i }).first()).toBeVisible({ timeout: 5000 });
 
     await page.getByRole('button', { name: /Sign In|Connexion/i }).first().click();

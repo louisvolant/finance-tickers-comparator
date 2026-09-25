@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/context/I18nContext';
 import { Plus, RefreshCw, LogIn, LogOut, TrendingUp, Sparkles } from 'lucide-react';
 
 interface NavbarProps {
@@ -13,6 +14,7 @@ interface NavbarProps {
 
 export function Navbar({ onAddTickerClick, onRefreshClick, refreshing, onOpenSettings }: NavbarProps) {
   const { user, loading, openAuthModal, logout } = useAuth();
+  const { t } = useI18n();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
@@ -31,7 +33,7 @@ export function Navbar({ onAddTickerClick, onRefreshClick, refreshing, onOpenSet
               </span>
               <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <Sparkles className="w-2.5 h-2.5" />
-                Live PE
+                {t('nav.livePE')}
               </span>
             </div>
           </div>
@@ -43,11 +45,11 @@ export function Navbar({ onAddTickerClick, onRefreshClick, refreshing, onOpenSet
           <button
             onClick={onRefreshClick}
             disabled={refreshing}
-            title="Refresh Quotes"
+            title={t('nav.refreshTitle')}
             className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-850 hover:border-slate-700 transition flex items-center gap-2 text-xs font-medium cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-emerald-400' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
+            <span className="hidden sm:inline">{t('nav.refresh')}</span>
           </button>
 
           {/* Add Ticker Button */}
@@ -56,7 +58,7 @@ export function Navbar({ onAddTickerClick, onRefreshClick, refreshing, onOpenSet
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs sm:text-sm transition shadow-lg shadow-emerald-500/20 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add Ticker</span>
+            <span>{t('nav.addTicker')}</span>
           </button>
 
           {/* Auth State */}
@@ -67,7 +69,7 @@ export function Navbar({ onAddTickerClick, onRefreshClick, refreshing, onOpenSet
                   <button
                     onClick={onOpenSettings}
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-left transition cursor-pointer"
-                    title="Account settings"
+                    title={t('nav.settings')}
                   >
                     <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">
                       {user.username.charAt(0).toUpperCase()}
@@ -83,7 +85,9 @@ export function Navbar({ onAddTickerClick, onRefreshClick, refreshing, onOpenSet
                   </button>
                   <button
                     onClick={logout}
-                    title="Log Out"
+                    title={t('nav.signOut')}
+                    aria-label="Sign Out"
+                    data-testid="logout-button"
                     className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-red-400 hover:bg-slate-850 hover:border-slate-700 transition cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
@@ -95,7 +99,7 @@ export function Navbar({ onAddTickerClick, onRefreshClick, refreshing, onOpenSet
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-200 font-medium text-xs sm:text-sm transition cursor-pointer"
                 >
                   <LogIn className="w-4 h-4 text-emerald-400" />
-                  <span>Sign In</span>
+                  <span>{t('nav.signIn')}</span>
                 </button>
               )}
             </>

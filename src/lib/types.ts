@@ -24,7 +24,7 @@ export interface UserTicker {
   id: string;
   symbol: string;
   name: string;
-  trackingValue: number; // Baseline target or purchase price to compute % diff
+  trackingValue: number | null; // Optional personal reference or purchase price to compute % diff
   notes?: string;
   order: number;
   createdAt: number;

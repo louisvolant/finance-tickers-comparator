@@ -1,18 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, X, Loader2, ArrowRight, Check, AlertCircle, DollarSign } from 'lucide-react';
+import { Search, X, Loader2, ArrowRight, AlertCircle, DollarSign } from 'lucide-react';
 import { TickerSearchResult, TickerQuote } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
+import { useI18n } from '@/context/I18nContext';
 
 interface TickerSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddTicker: (payload: { symbol: string; name: string; trackingValue: number; notes?: string }) => Promise<void>;
+  onAddTicker: (payload: { symbol: string; name: string; trackingValue: number | null; notes?: string }) => Promise<void>;
   existingSymbols: string[];
 }
 
 export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbols }: TickerSearchModalProps) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TickerSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,7 +52,7 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
     return () => clearTimeout(timer);
   }, [query]);
 
-  // When a ticker is selected, fetch its current quote to prefill tracking value
+  // When a ticker is selected, optionally preview live price
   const handleSelectTicker = async (ticker: TickerSearchResult) => {
     setSelectedTicker(ticker);
     setLoadingQuote(true);
@@ -63,6 +65,7 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
         const quote = data.quotes?.[ticker.symbol.toUpperCase()];
         if (quote) {
           setPreviewQuote(quote);
+          // Suggest current market price, but user can change or delete it freely
           setTrackingValue(quote.price.toString());
         }
       }
@@ -77,10 +80,12 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
     e.preventDefault();
     if (!selectedTicker) return;
 
-    const val = parseFloat(trackingValue);
-    if (isNaN(val) || val <= 0) {
-      setError('Please provide a valid tracking value greater than 0');
-      return;
+    let val: number | null = null;
+    if (trackingValue.trim()) {
+      const parsed = parseFloat(trackingValue);
+      if (!isNaN(parsed) && parsed > 0) {
+        val = parsed;
+      }
     }
 
     setSubmitting(true);
@@ -120,12 +125,13 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div>
-            <h2 className="text-lg font-bold text-white">Add Stock Ticker</h2>
-            <p className="text-xs text-slate-400">Search US stocks, European equities, and ETFs</p>
+            <h2 className="text-lg font-bold text-white">{t('search.title')}</h2>
+            <p className="text-xs text-slate-400">{t('search.sub')}</p>
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -146,7 +152,7 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
               <input
                 type="text"
                 autoFocus
-                placeholder="Search symbol or name (e.g. AAPL, MC.PA, CW8)..."
+                placeholder={t('search.placeholder')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
@@ -158,7 +164,7 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
             {!query && (
               <div className="mb-4">
                 <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block mb-2">
-                  Popular Suggestions
+                  {t('search.popular')}
                 </span>
                 <div className="flex flex-wrap gap-2">
                   {[
@@ -167,6 +173,7 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
                     { symbol: 'MC.PA', name: 'LVMH Paris' },
                     { symbol: 'AIR.PA', name: 'Airbus Paris' },
                     { symbol: 'CW8.PA', name: 'MSCI World ETF' },
+                    { symbol: 'PUST.PA', name: 'PEA Nasdaq-100' },
                     { symbol: 'NVDA', name: 'NVIDIA' },
                   ].map((item) => (
                     <button
@@ -207,7 +214,7 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
                       <p className="text-xs text-slate-400 truncate mt-0.5">{item.name}</p>
                     </div>
                     {isAlreadyAdded ? (
-                      <span className="text-[11px] text-slate-500 font-medium shrink-0">Already tracked</span>
+                      <span className="text-[11px] text-slate-500 font-medium shrink-0">{t('search.alreadyTracked')}</span>
                     ) : (
                       <ArrowRight className="w-4 h-4 text-emerald-400 shrink-0" />
                     )}
@@ -223,7 +230,7 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
             </div>
           </div>
         ) : (
-          /* Step 2: Configure tracking value */
+          /* Step 2: Configure tracking value (optional) */
           <form onSubmit={handleConfirmAdd} className="mt-4 space-y-4">
             <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between">
               <div>
@@ -243,7 +250,7 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
                 }}
                 className="text-xs text-emerald-400 hover:underline cursor-pointer"
               >
-                Change
+                {t('search.change')}
               </button>
             </div>
 
@@ -251,24 +258,24 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
             {loadingQuote ? (
               <div className="flex items-center gap-2 text-xs text-slate-400">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
-                <span>Fetching live market price...</span>
+                <span>Loading quote...</span>
               </div>
             ) : previewQuote ? (
               <div className="grid grid-cols-3 gap-2 p-3 bg-slate-800/40 rounded-xl border border-slate-800 text-xs">
                 <div>
-                  <span className="text-slate-400 block text-[10px]">Current Price</span>
+                  <span className="text-slate-400 block text-[10px]">{t('watchlist.colPrice')}</span>
                   <span className="font-semibold text-white">
                     {formatCurrency(previewQuote.price, previewQuote.currency)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">Current P/E</span>
+                  <span className="text-slate-400 block text-[10px]">{t('watchlist.colCurrentPE')}</span>
                   <span className="font-semibold text-emerald-400">
                     {previewQuote.trailingPE ? `${previewQuote.trailingPE}x` : '—'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[10px]">Forward P/E</span>
+                  <span className="text-slate-400 block text-[10px]">{t('watchlist.colForwardPE')}</span>
                   <span className="font-semibold text-cyan-400">
                     {previewQuote.forwardPE ? `${previewQuote.forwardPE}x` : '—'}
                   </span>
@@ -278,51 +285,53 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
 
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Tracking Value (Baseline / Cost Basis / Target Buy Price)
+                {t('search.trackingLabel')}
               </label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                 <input
                   type="number"
                   step="any"
-                  required
-                  placeholder="e.g. 150.00"
+                  placeholder={t('search.trackingPlaceholder')}
                   value={trackingValue}
                   onChange={(e) => setTrackingValue(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 font-mono"
                 />
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                The % difference shown on your dashboard will be computed against this baseline value.
+                {t('search.trackingHint')}
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Notes (Optional)</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">{t('search.notesLabel')}</label>
               <input
                 type="text"
-                placeholder="e.g. Bought on dip, long term DCA"
+                placeholder={t('search.notesPlaceholder')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               />
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setSelectedTicker(null)}
+                onClick={() => {
+                  setSelectedTicker(null);
+                  setPreviewQuote(null);
+                }}
                 className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 font-medium text-xs sm:text-sm transition cursor-pointer"
               >
-                Back
+                {t('search.back')}
               </button>
               <button
                 type="submit"
                 disabled={submitting}
                 className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
               >
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                <span>Add to Watchlist</span>
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                <span>{t('search.addBtn')}</span>
               </button>
             </div>
           </form>

@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useI18n } from '@/context/I18nContext';
 import { X, Lock, Mail, User, AlertCircle, Loader2 } from 'lucide-react';
 
 export function AuthModal() {
   const { authModalOpen, authModalTab, closeAuthModal, openAuthModal, login, register } = useAuth();
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -60,7 +62,7 @@ export function AuthModal() {
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            Sign In
+            {t('auth.tabLogin')}
           </button>
           <button
             onClick={() => {
@@ -73,7 +75,7 @@ export function AuthModal() {
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            Create Account
+            {t('auth.tabRegister')}
           </button>
         </div>
 
@@ -107,13 +109,13 @@ export function AuthModal() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
             />
           </svg>
-          Continue with Google
+          {t('auth.googleBtn')}
         </a>
 
         <div className="relative flex items-center justify-center mb-5">
           <div className="border-t border-slate-800 w-full"></div>
           <span className="bg-slate-900 px-3 text-xs font-medium text-slate-500 uppercase tracking-wider">
-            or with email
+            {t('auth.emailLabel')}
           </span>
         </div>
 
@@ -121,7 +123,7 @@ export function AuthModal() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {authModalTab === 'register' && (
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Username</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">{t('auth.usernameLabel')}</label>
               <div className="relative">
                 <User className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
                 <input
@@ -137,7 +139,7 @@ export function AuthModal() {
           )}
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">Email Address</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1.5">{t('auth.emailLabel')}</label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
               <input
@@ -152,7 +154,7 @@ export function AuthModal() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
+            <label className="block text-xs font-medium text-slate-300 mb-1.5">{t('auth.passwordLabel')}</label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
               <input
@@ -166,7 +168,7 @@ export function AuthModal() {
               />
             </div>
             {authModalTab === 'register' && (
-              <span className="text-[11px] text-slate-500 mt-1 block">At least 6 characters</span>
+              <span className="text-[11px] text-slate-500 mt-1 block">{t('auth.passwordHint')}</span>
             )}
           </div>
 
@@ -178,9 +180,9 @@ export function AuthModal() {
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : authModalTab === 'login' ? (
-              'Sign In'
+              t('auth.loginBtn')
             ) : (
-              'Create Account'
+              t('auth.registerBtn')
             )}
           </button>
         </form>

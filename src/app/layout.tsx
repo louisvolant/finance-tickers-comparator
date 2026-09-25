@@ -69,6 +69,8 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+import { I18nProvider } from '@/context/I18nContext';
+
 export default function RootLayout({
   children,
 }: {
@@ -78,7 +80,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="min-h-screen bg-[#090d16] text-slate-100 antialiased selection:bg-emerald-500 selection:text-slate-900">
         <ServiceWorkerRegister />
-        {children}
+        <I18nProvider>{children}</I18nProvider>
       </body>
     </html>
   );

@@ -199,7 +199,7 @@ function Dashboard() {
   const handleAddTicker = async (payload: {
     symbol: string;
     name: string;
-    trackingValue: number;
+    trackingValue: number | null;
     notes?: string;
   }) => {
     if (user) {
@@ -253,7 +253,7 @@ function Dashboard() {
   /**
    * Edit Tracking Value Handler
    */
-  const handleSaveTracking = async (id: string, trackingValue: number, notes?: string) => {
+  const handleSaveTracking = async (id: string, trackingValue: number | null, notes?: string) => {
     const updated = tickers.map((t) => (t.id === id ? { ...t, trackingValue, notes } : t));
     setTickers(updated);
     await saveLocalTickers(updated);
@@ -362,6 +362,21 @@ function Dashboard() {
           </div>
         )}
 
+        {/* Zero User Tracking & Privacy Clarification Banner */}
+        <div className="mb-6 rounded-xl bg-slate-900/60 border border-emerald-500/20 p-3.5 sm:p-4 flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0 mt-0.5">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <div className="text-xs">
+            <span className="font-semibold text-emerald-400 block mb-0.5">
+              {t('hero.privacyBadge')}
+            </span>
+            <p className="text-slate-300 leading-relaxed">
+              {t('hero.privacyText')}
+            </p>
+          </div>
+        </div>
+
         {/* Dashboard Title & Quick Search Bar */}
         <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
           <div>
@@ -455,17 +470,16 @@ function Dashboard() {
             <div className="w-12 h-12 rounded-2xl bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
               <TrendingUp className="w-6 h-6 text-emerald-400" />
             </div>
-            <h3 className="text-base font-bold text-white">No Tickers in Your Watchlist</h3>
+            <h3 className="text-base font-bold text-white">{t('watchlist.emptyTitle')}</h3>
             <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
-              Add your first stock or ETF to start tracking current prices, valuation multiples, and target
-              percentage variances.
+              {t('watchlist.emptyBody')}
             </p>
             <button
               onClick={() => setSearchModalOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-emerald-500/20 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Stock Ticker</span>
+              <span>{t('watchlist.emptyAddBtn')}</span>
             </button>
           </div>
         )}
@@ -477,9 +491,9 @@ function Dashboard() {
               <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-2.5">
                 <Zap className="w-4 h-4" />
               </div>
-              <h4 className="text-xs font-bold text-white">Yahoo Finance Engine</h4>
+              <h4 className="text-xs font-bold text-white">{t('features.yahooTitle')}</h4>
               <p className="text-[11px] text-slate-400 mt-1 leading-normal">
-                Broad coverage across US equities, European markets (MC.PA, AIR.PA), and UCITS ETFs (CW8.PA).
+                {t('features.yahooDesc')}
               </p>
             </div>
 
@@ -487,9 +501,9 @@ function Dashboard() {
               <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center mb-2.5">
                 <Sparkles className="w-4 h-4" />
               </div>
-              <h4 className="text-xs font-bold text-white">P/E & Forward P/E</h4>
+              <h4 className="text-xs font-bold text-white">{t('features.peTitle')}</h4>
               <p className="text-[11px] text-slate-400 mt-1 leading-normal">
-                Easily evaluate valuation multiples to spot value opportunities and growth expansions.
+                {t('features.peDesc')}
               </p>
             </div>
 
@@ -497,9 +511,9 @@ function Dashboard() {
               <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center mb-2.5">
                 <Smartphone className="w-4 h-4" />
               </div>
-              <h4 className="text-xs font-bold text-white">Instant IndexedDB Cache</h4>
+              <h4 className="text-xs font-bold text-white">{t('features.cacheTitle')}</h4>
               <p className="text-[11px] text-slate-400 mt-1 leading-normal">
-                Launch the app on your phone and immediately see your tickers without waiting for network calls.
+                {t('features.cacheDesc')}
               </p>
             </div>
 
@@ -507,9 +521,9 @@ function Dashboard() {
               <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center mb-2.5">
                 <ShieldCheck className="w-4 h-4" />
               </div>
-              <h4 className="text-xs font-bold text-white">Cloudflare Workers KV</h4>
+              <h4 className="text-xs font-bold text-white">{t('features.kvTitle')}</h4>
               <p className="text-[11px] text-slate-400 mt-1 leading-normal">
-                Global edge architecture with serverless KV storage, secure sessions, and rate-limit shields.
+                {t('features.kvDesc')}
               </p>
             </div>
           </div>
@@ -543,6 +557,28 @@ function Dashboard() {
           setSelectedTicker(null);
           handleDeleteTicker(t);
         }}
+        onMoveUp={
+          selectedTicker
+            ? () => {
+                const idx = tickers.findIndex((t) => t.id === selectedTicker.id);
+                if (idx > 0) handleMove(idx, 'up');
+              }
+            : undefined
+        }
+        onMoveDown={
+          selectedTicker
+            ? () => {
+                const idx = tickers.findIndex((t) => t.id === selectedTicker.id);
+                if (idx !== -1 && idx < tickers.length - 1) handleMove(idx, 'down');
+              }
+            : undefined
+        }
+        isFirst={selectedTicker ? tickers.findIndex((t) => t.id === selectedTicker.id) === 0 : true}
+        isLast={
+          selectedTicker
+            ? tickers.findIndex((t) => t.id === selectedTicker.id) === tickers.length - 1
+            : true
+        }
       />
       <EditTrackingModal
         ticker={editingTicker}
@@ -556,11 +592,9 @@ function Dashboard() {
 
 export default function HomePage() {
   return (
-    <I18nProvider>
-      <AuthProvider>
-        <Dashboard />
-      </AuthProvider>
-    </I18nProvider>
+    <AuthProvider>
+      <Dashboard />
+    </AuthProvider>
   );
 }
 

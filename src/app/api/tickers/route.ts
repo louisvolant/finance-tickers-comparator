@@ -59,10 +59,12 @@ export async function POST(request: NextRequest) {
     }
 
     const cleanSymbol = symbol.trim().toUpperCase();
-    const parsedTrackingValue = Number(trackingValue);
-
-    if (isNaN(parsedTrackingValue) || parsedTrackingValue <= 0) {
-      return NextResponse.json({ error: 'Valid tracking value is required' }, { status: 400 });
+    let parsedTrackingValue: number | null = null;
+    if (trackingValue !== undefined && trackingValue !== null && trackingValue !== '') {
+      const val = Number(trackingValue);
+      if (!isNaN(val) && val > 0) {
+        parsedTrackingValue = Number(val.toFixed(4));
+      }
     }
 
     // Verify ticker exists via quote
@@ -84,7 +86,7 @@ export async function POST(request: NextRequest) {
       id: 'tck_' + crypto.randomUUID().replace(/-/g, ''),
       symbol: cleanSymbol,
       name: name || quote.name || cleanSymbol,
-      trackingValue: Number(parsedTrackingValue.toFixed(4)),
+      trackingValue: parsedTrackingValue !== null ? Number(parsedTrackingValue.toFixed(4)) : null,
       notes: typeof notes === 'string' ? notes.trim() : '',
       order: tickers.length,
       createdAt: Date.now(),
@@ -126,9 +128,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (trackingValue !== undefined) {
-      const parsed = Number(trackingValue);
-      if (!isNaN(parsed) && parsed > 0) {
-        tickers[tickerIndex].trackingValue = Number(parsed.toFixed(4));
+      if (trackingValue === null || trackingValue === '') {
+        tickers[tickerIndex].trackingValue = null;
+      } else {
+        const parsed = Number(trackingValue);
+        if (!isNaN(parsed) && parsed > 0) {
+          tickers[tickerIndex].trackingValue = Number(parsed.toFixed(4));
+        }
       }
     }
 

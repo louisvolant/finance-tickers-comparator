@@ -5,13 +5,16 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
 ## Key Features
 
 - **Real-Time & 15-min Delayed Market Quotes**: Powered by Yahoo Finance (`yahoo-finance2`), covering US stocks, European equities (e.g. `MC.PA`, `AIR.PA`), and ETFs (e.g. `CW8.PA`).
-- **Valuation Multiples**: Instantly highlights **Current P/E** (`trailingPE`) and **Forward P/E** (`forwardPE`) for every ticker.
-- **Custom Tracking Value & % Diff**: Set your cost basis or target buy price. Ticker-Tracker computes and highlights the percentage variance (`% Diff`) in real time.
+- **Valuation Multiples on the Same Line**: Instantly displays **Current P/E** (`trailingPE`) right beside the ticker symbol, along with **Forward P/E** (`forwardPE`) for fast multiple comparisons.
+- **Ultra-Compact Mobile & Desktop View**: Designed to fit maximum tickers on mobile screens with ~1/3 of standard card height without decreasing font readability. Current price and daily change (% evolution) are docked top-right; action buttons and deep stats open seamlessly upon tapping.
+- **100% Private & Zero User Tracking**: No user tracking or behavioral telemetry. The "tracking value" is strictly an optional personal cost basis or target purchase price chosen and entered solely by the user (or left empty).
+- **Comprehensive Forward P/E Educational Guide**: Integrated breakdown detailing how Forward P/E is calculated, Wall Street & European analyst consensus mechanisms, forecast horizons (NTM / next FY), Trailing vs. Forward comparisons, and key analytical limitations.
+- **Optional Reference Target & % Diff**: Set your cost basis or target buy price. Ticker-Tracker automatically highlights the percentage variance (`% Diff`) in real time, or displays clean pricing when omitted.
 - **Zero-Latency Mobile & Desktop Startup (IndexedDB)**: Saved tickers and quotes are stored locally in IndexedDB, rendering your dashboard instantly upon opening your phone, with background stale-while-revalidate reloads.
 - **Progressive Web App (PWA)**: Installable on iOS, Android, and Desktop with offline caching via Service Worker and web app manifest.
 - **Multimodal Search (Ticker, Label & ISIN)**: Search stocks by symbol (e.g. `PUST`, `WPEA`), company name / ETF label (e.g. `LVMH`, `AIRBUS`, `SCHNEIDER`), or official ISIN codes (e.g. `FR0011871110`, `FR001400Q9V2`), supplemented by live Yahoo Finance search.
 - **Interactive Financial Stats & Charts**: Detailed modal with historical price trends, 52-week ranges, dividend yields, EPS, market capitalization, and beta.
-- **Ticker Reordering**: Organize your watchlist with intuitive drag-and-drop / reordering controls, persisted both locally and in Cloudflare KV.
+- **Ticker Reordering**: Organize your watchlist with intuitive reordering controls in rows and modal sheets, persisted both locally and in Cloudflare KV.
 - **Account Lifecycle & Security**: Registration, login, Google OAuth 2.0 integration, password updates (`/api/auth/changepassword`), and complete account deletion (`/api/auth/delete_my_account`).
 - **Multilingual Support (i18n)**: Full localization across 6 languages: English (`en`), French (`fr`), German (`de`), Spanish (`es`), Italian (`it`), and Portuguese (`pt`), with an active language selector.
 - **SEO & Legal**: Comprehensive metadata, dynamic `sitemap.xml`, `robots.txt`, Privacy Policy (`/privacy`), Terms of Service (`/terms`), and footer links to [Personal Page](https://www.louisvolant.com) and [Portfolio](https://www.louisvolant.com/portfolio).
