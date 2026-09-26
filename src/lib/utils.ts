@@ -127,3 +127,47 @@ export function getForwardPeCardClass(pe: number | null | undefined): string {
   }
   return 'bg-rose-950/30 border-rose-800/50 text-rose-400';
 }
+
+/**
+ * Return color classes for the Current P/E (trailing) badge.
+ * Tiers: none → slate, ≤20x → emerald, 20–40x → blue, 40–60x → orange, >60x → deep rose.
+ */
+export function getCurrentPeBadgeClass(pe: number | null | undefined): string {
+  if (pe === null || pe === undefined || isNaN(pe) || pe <= 0) {
+    return 'text-slate-400 bg-slate-800/60 border-slate-700/60';
+  }
+  // ≤ 20x: healthy / value territory (emerald)
+  if (pe <= 20) {
+    return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+  }
+  // 20–40x: elevated but common for growth stocks (blue)
+  if (pe <= 40) {
+    return 'text-blue-400 bg-blue-500/10 border-blue-500/25';
+  }
+  // 40–60x: high multiple (orange)
+  if (pe <= 60) {
+    return 'text-orange-400 bg-orange-500/15 border-orange-500/35 font-bold';
+  }
+  // > 60x: very stretched (deep rose/red)
+  return 'text-rose-400 bg-rose-500/20 border-rose-500/45 font-black shadow-sm shadow-rose-950/50';
+}
+
+/**
+ * Return container classes for Current P/E highlight card in details modal.
+ * Mirrors getCurrentPeBadgeClass() but as card-level background/border/text.
+ */
+export function getCurrentPeCardClass(pe: number | null | undefined): string {
+  if (pe === null || pe === undefined || isNaN(pe) || pe <= 0) {
+    return 'bg-slate-950/60 border-slate-800/80 text-slate-400';
+  }
+  if (pe <= 20) {
+    return 'bg-emerald-950/20 border-emerald-800/30 text-emerald-400';
+  }
+  if (pe <= 40) {
+    return 'bg-blue-950/20 border-blue-800/30 text-blue-400';
+  }
+  if (pe <= 60) {
+    return 'bg-orange-950/25 border-orange-800/40 text-orange-400';
+  }
+  return 'bg-rose-950/30 border-rose-800/50 text-rose-400';
+}

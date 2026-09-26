@@ -3,7 +3,7 @@
 import React from 'react';
 import { ArrowUp, ArrowDown, ChevronUp, ChevronDown, Sunrise, Moon } from 'lucide-react';
 import { UserTicker } from '@/lib/types';
-import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass } from '@/lib/utils';
+import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass, getCurrentPeBadgeClass } from '@/lib/utils';
 import { useI18n } from '@/context/I18nContext';
 
 interface TickerCardProps {
@@ -78,7 +78,7 @@ export function TickerCard({
 
           {/* Current PE on line 2 */}
           {quote?.trailingPE ? (
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border font-mono ${getCurrentPeBadgeClass(quote.trailingPE)}`}>
               PE {formatMultiple(quote.trailingPE)}
             </span>
           ) : null}

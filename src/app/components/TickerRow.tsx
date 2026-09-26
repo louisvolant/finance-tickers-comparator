@@ -3,7 +3,7 @@
 import React from 'react';
 import { ArrowUp, ArrowDown, ChevronUp, ChevronDown, BarChart2, Edit2, Trash2, Sunrise, Moon } from 'lucide-react';
 import { UserTicker } from '@/lib/types';
-import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass } from '@/lib/utils';
+import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass, getCurrentPeBadgeClass } from '@/lib/utils';
 import { useI18n } from '@/context/I18nContext';
 
 interface TickerRowProps {
@@ -155,11 +155,15 @@ export function TickerRow({
         )}
       </td>
 
-      {/* Current P/E (Trailing) */}
+      {/* Current P/E (Trailing) — only shown when available */}
       <td className="py-1.5 px-3 text-center">
-        <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-bold bg-slate-800 text-emerald-400 border border-slate-700/60 font-mono">
-          {formatMultiple(quote?.trailingPE)}
-        </span>
+        {quote?.trailingPE ? (
+          <span className={`inline-block px-2 py-0.5 rounded-lg text-xs font-bold border font-mono transition ${getCurrentPeBadgeClass(quote.trailingPE)}`}>
+            {formatMultiple(quote.trailingPE)}
+          </span>
+        ) : (
+          <span className="text-xs text-slate-500 font-mono">—</span>
+        )}
       </td>
 
       {/* Forward P/E with custom valuation color tiers */}

@@ -4,6 +4,8 @@ import {
   getExtendedSessionBadgeClass,
   getForwardPeBadgeClass,
   getForwardPeCardClass,
+  getCurrentPeBadgeClass,
+  getCurrentPeCardClass,
 } from '../src/lib/utils';
 
 describe('Color Tiers & Indicators', () => {
@@ -78,4 +80,41 @@ describe('Color Tiers & Indicators', () => {
       assert.ok(card80.includes('rose') || card80.includes('red'));
     });
   });
+
+  describe('Current P/E (Trailing) Color Tiers', () => {
+    test('should return neutral slate for missing or non-positive P/E', () => {
+      assert.ok(getCurrentPeBadgeClass(null).includes('slate'));
+      assert.ok(getCurrentPeBadgeClass(undefined).includes('slate'));
+      assert.ok(getCurrentPeBadgeClass(0).includes('slate'));
+      assert.ok(getCurrentPeBadgeClass(-10).includes('slate'));
+      assert.ok(getCurrentPeCardClass(null).includes('slate'));
+    });
+
+    test('should return emerald for healthy P/E at or below 20x', () => {
+      assert.ok(getCurrentPeBadgeClass(15).includes('emerald'));
+      assert.ok(getCurrentPeBadgeClass(20).includes('emerald'));
+      assert.ok(getCurrentPeCardClass(18).includes('emerald'));
+    });
+
+    test('should return blue for elevated P/E between 20x and 40x', () => {
+      assert.ok(getCurrentPeBadgeClass(25).includes('blue'));
+      assert.ok(getCurrentPeBadgeClass(40).includes('blue'));
+      assert.ok(getCurrentPeCardClass(30).includes('blue'));
+    });
+
+    test('should return orange for high P/E between 40x and 60x', () => {
+      assert.ok(getCurrentPeBadgeClass(50).includes('orange'));
+      assert.ok(getCurrentPeBadgeClass(60).includes('orange'));
+      assert.ok(getCurrentPeCardClass(55).includes('orange'));
+    });
+
+    test('should return rose/red for very stretched P/E above 60x', () => {
+      const badge = getCurrentPeBadgeClass(80);
+      assert.ok(badge.includes('rose') || badge.includes('red'));
+
+      const card = getCurrentPeCardClass(100);
+      assert.ok(card.includes('rose') || card.includes('red'));
+    });
+  });
 });
+

@@ -28,6 +28,7 @@ import {
   getExtendedSessionBadgeClass,
   getForwardPeBadgeClass,
   getForwardPeCardClass,
+  getCurrentPeCardClass,
 } from '@/lib/utils';
 import { useI18n } from '@/context/I18nContext';
 
@@ -265,23 +266,27 @@ export function TickerDetailsModal({
             )}
           </div>
 
-          {/* Current P/E */}
-          <div className="p-3 bg-emerald-950/20 border border-emerald-800/30 rounded-xl">
-            <span className="text-[11px] font-medium text-emerald-300 block mb-1">{t('details.currentPe')}</span>
-            <div className="text-lg sm:text-xl font-black text-emerald-400">
-              {formatMultiple(quote?.trailingPE)}
+          {/* Current P/E — color-tiered: emerald ≤20x, blue 20–40x, orange 40–60x, rose >60x */}
+          {quote?.trailingPE ? (
+            <div className={`p-3 rounded-xl border transition ${getCurrentPeCardClass(quote.trailingPE)}`}>
+              <span className="text-[11px] font-medium block mb-1 opacity-90">{t('details.currentPe')}</span>
+              <div className="text-lg sm:text-xl font-black">
+                {formatMultiple(quote.trailingPE)}
+              </div>
+              <span className="text-[10px] block mt-0.5 opacity-80">{t('details.currentPeDesc')}</span>
             </div>
-            <span className="text-[10px] text-slate-400 block mt-0.5">{t('details.currentPeDesc')}</span>
-          </div>
+          ) : null}
 
-          {/* Forward P/E with custom valuation color tiers */}
-          <div className={`p-3 rounded-xl border transition ${getForwardPeCardClass(quote?.forwardPE)}`}>
-            <span className="text-[11px] font-medium block mb-1 opacity-90">{t('details.forwardPe')}</span>
-            <div className="text-lg sm:text-xl font-black">
-              {formatMultiple(quote?.forwardPE)}
+          {/* Forward P/E with custom valuation color tiers — hidden when unavailable */}
+          {quote?.forwardPE ? (
+            <div className={`p-3 rounded-xl border transition ${getForwardPeCardClass(quote.forwardPE)}`}>
+              <span className="text-[11px] font-medium block mb-1 opacity-90">{t('details.forwardPe')}</span>
+              <div className="text-lg sm:text-xl font-black">
+                {formatMultiple(quote.forwardPE)}
+              </div>
+              <span className="text-[10px] block mt-0.5 opacity-80">{t('details.forwardPeDesc')}</span>
             </div>
-            <span className="text-[10px] block mt-0.5 opacity-80">{t('details.forwardPeDesc')}</span>
-          </div>
+          ) : null}
         </div>
 
         {/* Historical Price Chart */}
