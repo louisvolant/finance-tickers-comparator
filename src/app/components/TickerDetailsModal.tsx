@@ -29,6 +29,7 @@ import {
   getForwardPeBadgeClass,
   getForwardPeCardClass,
   getCurrentPeCardClass,
+  fetchJsonWithRetry,
 } from '@/lib/utils';
 import { useI18n } from '@/context/I18nContext';
 
@@ -66,24 +67,26 @@ export function TickerDetailsModal({
     if (!ticker || !isOpen) return;
 
     let isMounted = true;
-    const fetchDetails = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/tickers/details?symbol=${encodeURIComponent(ticker.symbol)}&range=${range}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted) {
-            setDetails(data);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load ticker details:', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
+    // Clear any previously loaded ticker so we never render the previous
+    // symbol's chart/consensus while the new one is still in flight.
+    setDetails(null);
+    setLoading(true);
 
-    fetchDetails();
+    fetchJsonWithRetry(
+      `/api/tickers/details?symbol=${encodeURIComponent(ticker.symbol)}&range=${range}`
+    )
+      .then((data) => {
+        if (isMounted) setDetails(data);
+      })
+      .catch((err) => {
+        // Every retry has been exhausted: keep the chart empty, the "no data"
+        // placeholder is the best we can honestly show.
+        console.error('Failed to load ticker details:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
     return () => {
       isMounted = false;
     };

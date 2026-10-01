@@ -183,6 +183,7 @@ Covers:
 - Watchlist tickers ordering and `% diff` variance computation
 - Account management (password update and account deletion)
 - Yahoo Finance service and quote normalization
+- `fetchJsonWithRetry()` retry policy (transient vs. deterministic failures, backoff, give-up behaviour)
 
 ### Run End-to-End Tests (Playwright)
 ```bash
@@ -192,6 +193,7 @@ Covers:
 - Full user journey: registration, login, adding tickers by symbol and company label, tracking cost basis configuration, reordering tickers, viewing details and price history charts, password change, logout, re-authentication, and account deletion.
 - Multimodal search across tickers (`PUST`), company labels (`LVMH`, `AIRBUS`), and ISIN codes (`FR001400Q9V2`).
 - Navigation and internationalization: privacy page, terms page, dynamic language switching across 6 locales, and footer verification (`Personal Page`, `Portfolio`).
+- Price history resilience: transparent recovery when the details request fails on first open, correct loading state (never a premature "no chart points" message), non-empty `1MO` series on first render, and no chart bleed-through between two tickers.
 
 ---
 
@@ -200,14 +202,19 @@ Covers:
 Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expiration. To provide reliable performance and stay within free tier limits, Ticker-Tracker uses a multi-tier fallback architecture:
 
 1. **Cloudflare KV / Local Store Cache**:
-   - Live Quotes: cached for 90 seconds.
+   - Live Quotes: cached for 30 seconds.
    - Autocomplete & Search: cached for 1 hour.
    - Historical Chart & Stats: cached for 10 minutes.
+   - Degraded payloads are never cached: if the upstream returns an empty price series, the response is served without writing to KV so the next request retries the network instead of replaying a blank chart for the whole TTL window.
 2. **Multi-Tier Fetching Engine**:
    - **Tier 1**: `yf.quote()` for real-time market metrics.
    - **Tier 2**: `yf.quoteSummary()` for fundamental valuation modules (`summaryDetail`, `defaultKeyStatistics`, `price`).
    - **Tier 3**: Direct Yahoo Finance Chart API (`query1.finance.yahoo.com/v8/finance/chart`) with browser headers.
    - **Tier 4**: Graceful stale-cache recovery if network requests are degraded.
+3. **Client-Side Resilience**:
+   - Details requests are issued through `fetchJsonWithRetry()`, which retries transient failures (`5xx`, `408`, `429`, network errors) up to 3 times with capped exponential backoff.
+   - Deterministic client errors such as `404` fail fast instead of being retried.
+   - This matters most on a cold cache (first open of a symbol, typically outside market hours) where Yahoo Finance is most likely to answer with a transient error. Previously a single failed response was rendered as "no chart points available" and the blank series was then cached, so the chart only recovered after manually switching range.
 
 ---
 
@@ -216,7 +223,7 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
 ### Market & Tickers
 - `GET /api/tickers/search?q={query}`: Search tickers across curated catalog and global exchanges.
 - `GET /api/tickers/quote?symbols={AAPL,MC.PA,...}`: Fetch single or batch quotes with valuation multiples.
-- `GET /api/tickers/details?symbol={symbol}&range={1mo}`: Retrieve historical chart time series and detailed statistics.
+- `GET /api/tickers/details?symbol={symbol}&range={1mo}`: Retrieve historical chart time series and detailed statistics. Supported ranges: `1d`, `5d`, `1mo`, `6mo`, `1y`, `5y`.
 
 ### Watchlist Management
 - `GET /api/tickers`: Retrieve authenticated user's tickers enriched with quotes.

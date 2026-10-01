@@ -487,7 +487,19 @@ export async function getTickerDetails(
       forwardConsensus,
     };
 
-    await kvPut(cacheKey, details, { expirationTtl: CHART_CACHE_TTL_SEC });
+    // Only persist to KV when the upstream actually returned a usable series.
+    // Caching a degraded payload (empty chart) would keep serving a blank chart
+    // for the whole TTL window, so a single transient upstream failure would
+    // survive long after Yahoo Finance had recovered. Skipping the write lets
+    // the next request hit the network again.
+    if (chartPoints.length > 0) {
+      await kvPut(cacheKey, details, { expirationTtl: CHART_CACHE_TTL_SEC });
+    } else {
+      console.warn(
+        `Empty chart series for ${cleanSymbol} (${range}); serving uncached so the next attempt retries upstream`
+      );
+    }
+
     return details;
   } catch (err) {
     console.error(`Details fetch error for ${cleanSymbol}:`, err);

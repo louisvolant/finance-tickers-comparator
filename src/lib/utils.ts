@@ -39,6 +39,54 @@ export function formatMultiple(value: number | null | undefined): string {
   return `${value.toFixed(1)}x`;
 }
 
+/**
+ * Sleep helper used to space out retries.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Fetch JSON with a bounded number of silent retries.
+ *
+ * Yahoo Finance occasionally answers a cold (uncached) request with a
+ * transient 4xx/5xx. Without a retry the UI has to settle for a single failed
+ * response, which used to leave the price history permanently blank until the
+ * user manually switched range. Retrying transparently keeps the loading state
+ * up instead of rendering a misleading "no data" message.
+ *
+ * Aborts as soon as the caller-provided signal fires, and never retries a 4xx
+ * other than 408/429 since those are deterministic client errors.
+ */
+export async function fetchJsonWithRetry(
+  url: string,
+  options: RequestInit = {},
+  retries: number = 3
+): Promise<any> {
+  const baseDelay = 400;
+
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.ok) return await res.json();
+
+      // Deterministic client errors: retrying would just repeat the same failure.
+      const retryableStatus = res.status >= 500 || res.status === 408 || res.status === 429;
+      if (!retryableStatus || attempt >= retries) {
+        const err = new Error(`Request failed with status ${res.status}`);
+        (err as any).status = res.status;
+        throw err;
+      }
+    } catch (err: any) {
+      if (err?.status && (err.status < 500 && err.status !== 408 && err.status !== 429)) throw err;
+      if (attempt >= retries) throw err;
+
+      // Exponential backoff, capped so the UI never waits absurdly long.
+      await sleep(Math.min(baseDelay * 2 ** attempt, 2000));
+    }
+  }
+}
+
 export function formatCompactNumber(value: number | null | undefined): string {
   if (value === null || value === undefined || isNaN(value)) return '—';
   return new Intl.NumberFormat('en-US', {
