@@ -1,11 +1,24 @@
 // Ticker-Tracker Service Worker for offline PWA support
-const CACHE_NAME = 'ticker-tracker-v1';
+// Bump when the caching policy below changes so existing installs drop stale
+// entries (v2: stopped persisting /ticker/ navigations).
+const CACHE_NAME = 'ticker-tracker-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/icons/icon.svg',
   '/favicon.ico'
 ];
+
+/**
+ * Routes that carry per-user data (reference target, personal notes).
+ *
+ * These must be network-only: never served from Cache Storage and never
+ * written to it. A cached shell would survive a logout and could hand one
+ * user's watchlist context to the next user on a shared device, and it would
+ * also be replayed from disk while offline.
+ */
+const isPersonalizedRoute = (pathname) =>
+  pathname.startsWith('/api/') || pathname.startsWith('/ticker/');
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -36,8 +49,9 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET and API routes to ensure fresh market data
-  if (request.method !== 'GET' || url.pathname.startsWith('/api/')) {
+  // Skip non-GET requests, market data APIs, and every personalized route, so
+  // they always hit the network and are never persisted to Cache Storage.
+  if (request.method !== 'GET' || isPersonalizedRoute(url.pathname)) {
     return;
   }
 

@@ -20,10 +20,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /**
+ * The page renders per-user data (reference target, personal notes, and a
+ * watchlist-derived quote), so it must be produced fresh on every request.
+ * `force-dynamic` + `revalidate = 0` pin this down explicitly: without them a
+ * future `generateStaticParams`, ISR revalidate window or `fetchCache`
+ * override could silently start serving one user's shell to another.
+ */
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+/**
  * Full-page replacement for the old centred details modal. Rendering it as a
  * real route fixes the two-pass mobile layout (the modal painted before its
  * content arrived) and gives the browser back button, deep links and PWA
  * shortcuts for free.
+ *
+ * Personalization is intentionally resolved client-side (see TickerDetailsPage)
+ * so the cached server shell stays user-agnostic.
  */
 export default async function TickerDetailsRoute({ params }: PageProps) {
   const { symbol } = await params;

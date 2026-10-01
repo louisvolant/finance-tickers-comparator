@@ -43,6 +43,7 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
 - **Account Lifecycle & Security**: Registration, login, Google OAuth 2.0 integration, password updates (`/api/auth/changepassword`), and complete account deletion (`/api/auth/delete_my_account`).
 - **Multilingual Support (i18n)**: Full localization across 6 languages: English (`en`), French (`fr`), German (`de`), Spanish (`es`), Italian (`it`), and Portuguese (`pt`), with an active language selector.
 - **SEO & Legal**: Comprehensive metadata, dynamic `sitemap.xml`, `robots.txt`, Privacy Policy (`/privacy`), Terms of Service (`/terms`), and footer links to [Personal Page](https://www.louisvolant.com) and [Portfolio](https://www.louisvolant.com/portfolio).
+- **Privacy-Safe Caching**: Personalized routes (`/ticker/`, `/api/`) are forced dynamic, sent with `Cache-Control: private, no-store`, and excluded from Service Worker Cache Storage — your reference target and personal notes are never retained by a CDN, proxy or offline cache.
 - **Cloudflare Workers Ready**: Compatible with Cloudflare Workers / OpenNext with KV storage bindings (`KV`, `ticker_tracker_kv`), `keep_vars = true` preservation, and local development fallback.
 
 ---
@@ -184,6 +185,7 @@ Covers:
 - Account management (password update and account deletion)
 - Yahoo Finance service and quote normalization
 - `fetchJsonWithRetry()` retry policy (transient vs. deterministic failures, backoff, give-up behaviour)
+- Cache policy for personalized routes: `next.config.mjs` header rules for `/ticker/:path*` (`private` + `no-store`, no `s-maxage`) and that static PWA assets stay cacheable
 
 ### Run End-to-End Tests (Playwright)
 ```bash
@@ -195,6 +197,7 @@ Covers:
 - Navigation and internationalization: privacy page, terms page, dynamic language switching across 6 locales, and footer verification (`Personal Page`, `Portfolio`).
 - Price history resilience: transparent recovery when the details request fails on first open, correct loading state (never a premature "no chart points" message), non-empty `1MO` series on first render, and no chart bleed-through between two tickers.
 - Ticker details full page: real route navigation, back arrow to the dashboard, deep-linking and reload survival, browser back button, per-symbol page metadata, range switching, and stable single-column mobile layout with no reflow.
+- Cache privacy for the ticker page: `no-store` response headers, no personalized markers in the server-rendered HTML, a dynamic (never pre-rendered) route, and a Cache Storage inspection proving the Service Worker persists nothing under `/ticker/` or `/api/tickers`.
 
 ---
 
@@ -229,6 +232,21 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
 ### Pages
 - `/`: Watchlist dashboard (quotes, valuation multiples, display modes, tracking targets).
 - `/ticker/[symbol]`: Full-page ticker view — live price, trailing & forward P/E, 52-week range, price history chart, key statistics and the sell-side earnings consensus table. Deep-linkable, with a back-to-dashboard arrow in the header. Replaces the former centred details modal, which painted in two passes on mobile and reflowed once its data arrived.
+
+---
+
+## Privacy & Caching of Personalized Routes
+
+The ticker page renders per-user data: the **reference target (cost basis)**, the **personal notes** and a watchlist-derived quote. None of it may be retained by an intermediary. Four layers are pinned down:
+
+1. **Resolution is client-side.** `TickerDetailsPage` re-reads its watchlist entry from `/api/tickers` (authenticated) or IndexedDB (guest) in the browser. The server-rendered shell therefore contains **no** personalized values, so even a hypothetically cached shell would stay user-agnostic.
+2. **The route is forced dynamic.** `export const dynamic = 'force-dynamic'` and `export const revalidate = 0` prevent a future `generateStaticParams` or ISR window from turning the page into a shared artifact.
+3. **Explicit response headers.** `next.config.mjs` sets `Cache-Control: private, no-store, max-age=0, must-revalidate` for `/ticker/:path*`. `private` additionally forbids shared/CDN caches. A `Vary: Cookie` header is deliberately *not* set: Next.js manages `Vary` itself and overwrites it, so it would be misleading.
+4. **Service Worker network-only.** `public/sw.js` treats `/ticker/` and `/api/` as *personalized routes*: they are never read from **nor written to** Cache Storage. Previously every navigation was cached, which persisted the page on disk. `CACHE_NAME` was bumped to `v2` so existing installs purge those entries on activation.
+
+Offline note: because `/ticker/` is deliberately not cached, opening it with no network shows the browser's offline state rather than a stale page. That is intentional — a cached page could replay another user's reference target on a shared device.
+
+Guarded by `tests/tickerCachePolicy.test.ts` (config-level header assertions) and `e2e/ticker-cache-privacy.spec.ts` (runtime headers, absence of personalized markers in the SSR HTML, and a Cache Storage inspection proving nothing under `/ticker/` or `/api/tickers` is ever persisted).
 
 ### Watchlist Management
 - `GET /api/tickers`: Retrieve authenticated user's tickers enriched with quotes.
