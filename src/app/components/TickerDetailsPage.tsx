@@ -232,10 +232,12 @@ export function TickerDetailsPage({ symbol }: { symbol: string }) {
   const maxClose = chartData.length > 0 ? Math.max(...chartData.map((d) => d.close)) * 1.02 : 100;
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100">
-      {/* Back to dashboard bar */}
+    // The content background is the old card colour, extended edge to edge, so
+    // the page no longer wastes space on a dark frame around a box.
+    <div className="min-h-screen bg-slate-900 text-slate-100">
+      {/* Back to dashboard bar (keeps its darker treatment to stay distinct) */}
       <div className="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur border-b border-slate-800">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3">
           <button
             type="button"
             onClick={goHome}
@@ -248,8 +250,11 @@ export function TickerDetailsPage({ symbol }: { symbol: string }) {
         </div>
       </div>
 
-      <main className="max-w-3xl w-full mx-auto px-4 sm:px-6 py-6">
-        <div className="rounded-2xl bg-slate-900 border border-slate-800 p-5 sm:p-6">
+      {/* Full-bleed content area: no card, no rounded corners and no outer
+          margin, so the space previously eaten by the frame is recovered. The
+          horizontal padding is kept so content never touches the screen edge. */}
+      <main className="w-full">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
           {/* Header */}
           <div className="flex items-start justify-between pb-4 border-b border-slate-800">
             <div>

@@ -231,7 +231,7 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
 
 ### Pages
 - `/`: Watchlist dashboard (quotes, valuation multiples, display modes, tracking targets).
-- `/ticker/[symbol]`: Full-page ticker view — live price, trailing & forward P/E, 52-week range, price history chart, key statistics and the sell-side earnings consensus table. Deep-linkable, with a back-to-dashboard arrow in the header. Replaces the former centred details modal, which painted in two passes on mobile and reflowed once its data arrived.
+- `/ticker/[symbol]`: Full-page ticker view — live price, trailing & forward P/E, 52-week range, price history chart, key statistics and the sell-side earnings consensus table. Deep-linkable, with a back-to-dashboard arrow in the header. Replaces the former centred details modal, which painted in two passes on mobile and reflowed once its data arrived. The content is rendered full-bleed: no outer card, border or rounded corners, so the space the modal's frame used to consume is reclaimed at the top, sides and bottom.
 
 ---
 
