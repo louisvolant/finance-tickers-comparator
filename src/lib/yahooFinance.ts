@@ -2,10 +2,43 @@ import YahooFinance from 'yahoo-finance2';
 import { kvGet, kvPut } from './kv';
 import { TickerQuote, TickerSearchResult, ChartPoint, TickerDetails, ForwardConsensusData, EarningsEstimatePeriod } from './types';
 
-// Instantiate YahooFinance client suppressing survey notice
-const yf = new YahooFinance({
-  suppressNotices: ['yahooSurvey'],
-});
+/**
+ * The library only default-exports the client class, not a named instance
+ * type, so the instance type is derived from the constructor.
+ */
+type YahooFinanceClient = InstanceType<typeof YahooFinance>;
+
+/**
+ * Create a Yahoo Finance client bound to a single request.
+ *
+ * yahoo-finance2 memoises the Yahoo crumb promise inside the per-client cookie
+ * jar (see its `lib/getCrumb`: `crumbStates` is a WeakMap keyed by the jar, and
+ * `state.promise` is reused by every caller sharing that jar).
+ *
+ * With a module-scope client - the natural thing to do on Node - every
+ * concurrent request in a Workers isolate shares that one promise. The request
+ * that created it resolves fine; the others await a promise belonging to a
+ * request context that has already been torn down. The runtime cancels their
+ * continuations, the handler never produces a response, and Cloudflare kills
+ * the request:
+ *
+ *   "The Workers runtime canceled this request because it detected that your
+ *    Worker's code had hung and would never generate a response."
+ *   (HTTP 500, outcome: "exception")
+ *
+ * Creating one client per request keeps the crumb cache request-scoped, so
+ * concurrent requests can never await each other's promises. The library's
+ * per-instance fetch queue (`queues` WeakMap, also keyed by instance) is
+ * isolated the same way.
+ *
+ * A client therefore has to be threaded through a request rather than created
+ * per call: a batch of 30 symbols must share one crumb fetch, not perform 30.
+ */
+function createYahooFinanceClient(): YahooFinanceClient {
+  return new YahooFinance({
+    suppressNotices: ['yahooSurvey'],
+  });
+}
 
 const QUOTE_CACHE_TTL_SEC = 30; // Cache quotes for 30 seconds in KV
 const SEARCH_CACHE_TTL_SEC = 3600; // Cache search queries for 1 hour in KV
@@ -136,9 +169,13 @@ async function fetchChartDirect(symbol: string): Promise<any | null> {
 }
 
 /**
- * Fetch a single ticker quote with multi-tiered resilience and KV caching.
+ * Fetch a single ticker quote with multi-tiered resilience and KV caching,
+ * reusing the caller's request-scoped client.
  */
-export async function getQuote(symbol: string): Promise<TickerQuote | null> {
+async function fetchQuoteWithClient(
+  yf: YahooFinanceClient,
+  symbol: string
+): Promise<TickerQuote | null> {
   const cleanSymbol = symbol.trim().toUpperCase();
   if (!cleanSymbol) return null;
 
@@ -218,6 +255,13 @@ export async function getQuote(symbol: string): Promise<TickerQuote | null> {
 }
 
 /**
+ * Fetch a single ticker quote. Opens its own request-scoped client.
+ */
+export async function getQuote(symbol: string): Promise<TickerQuote | null> {
+  return fetchQuoteWithClient(createYahooFinanceClient(), symbol);
+}
+
+/**
  * Batch fetch multiple ticker quotes.
  */
 export async function getBatchQuotes(symbols: string[]): Promise<Record<string, TickerQuote>> {
@@ -244,10 +288,14 @@ export async function getBatchQuotes(symbols: string[]): Promise<Record<string, 
     return results;
   }
 
+  // One client for the whole batch: every symbol in a request shares a single
+  // crumb fetch instead of triggering one per symbol.
+  const yf = createYahooFinanceClient();
+
   // Fetch missing concurrently
   const fetchPromises = toFetch.map(async (sym) => {
     try {
-      const quote = await getQuote(sym);
+      const quote = await fetchQuoteWithClient(yf, sym);
       if (quote) {
         results[sym] = quote;
       }
@@ -279,6 +327,7 @@ export async function searchTickers(query: string): Promise<TickerSearchResult[]
   const seenSymbols = new Set(catalogMatches.map((m) => m.symbol.toUpperCase()));
 
   try {
+    const yf = createYahooFinanceClient();
     const res = await yf.search(cleanQuery, {
       newsCount: 0,
       quotesCount: 8,
@@ -320,7 +369,11 @@ export async function getTickerDetails(
   if (cached) return cached;
 
   try {
-    const quote = await getQuote(cleanSymbol);
+    // A single request-scoped client serves the quote, the chart and the
+    // consensus lookup below, so the crumb is fetched at most once per request.
+    const yf = createYahooFinanceClient();
+
+    const quote = await fetchQuoteWithClient(yf, cleanSymbol);
     if (!quote) return null;
 
     let interval: '2m' | '15m' | '1d' | '1wk' | '1mo' = '1d';

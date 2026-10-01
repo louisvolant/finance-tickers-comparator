@@ -186,6 +186,7 @@ Covers:
 - Yahoo Finance service and quote normalization
 - `fetchJsonWithRetry()` retry policy (transient vs. deterministic failures, backoff, give-up behaviour)
 - Cache policy for personalized routes: `next.config.mjs` header rules for `/ticker/:path*` (`private` + `no-store`, no `s-maxage`) and that static PWA assets stay cacheable
+- Yahoo Finance client lifecycle: no module-scope instantiation, a single factory, exactly one client per batch, and a fresh client per single-quote call (guards the Workers cross-request promise race)
 
 ### Run End-to-End Tests (Playwright)
 ```bash
@@ -198,6 +199,7 @@ Covers:
 - Price history resilience: transparent recovery when the details request fails on first open, correct loading state (never a premature "no chart points" message), non-empty `1MO` series on first render, and no chart bleed-through between two tickers.
 - Ticker details full page: real route navigation, back arrow to the dashboard, deep-linking and reload survival, browser back button, per-symbol page metadata, range switching, and stable single-column mobile layout with no reflow.
 - Cache privacy for the ticker page: `no-store` response headers, no personalized markers in the server-rendered HTML, a dynamic (never pre-rendered) route, and a Cache Storage inspection proving the Service Worker persists nothing under `/ticker/` or `/api/tickers`.
+- Quote API concurrency: parallel batch requests, mixed parallel calls across every Yahoo-backed endpoint, and full symbol fan-out. Note this runs under Node and therefore cannot reproduce the Workers-only crumb race - see the request-scoped client note above.
 
 ---
 
@@ -219,6 +221,28 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
    - Details requests are issued through `fetchJsonWithRetry()`, which retries transient failures (`5xx`, `408`, `429`, network errors) up to 3 times with capped exponential backoff.
    - Deterministic client errors such as `404` fail fast instead of being retried.
    - This matters most on a cold cache (first open of a symbol, typically outside market hours) where Yahoo Finance is most likely to answer with a transient error. Previously a single failed response was rendered as "no chart points available" and the blank series was then cached, so the chart only recovered after manually switching range.
+4. **Request-Scoped Yahoo Finance Client (Workers correctness)**:
+   - `yahoo-finance2` memoises the Yahoo crumb promise inside the per-client cookie jar, so a **module-scope client is shared by every concurrent request in a Workers isolate**.
+   - The request that created the promise resolves; the others await a promise belonging to an already torn-down request context. The runtime cancels their continuations, the handler never responds, and Cloudflare kills the request with HTTP 500 and `outcome: "exception"` ("code had hung and would never generate a response").
+   - Ticker-Tracker therefore creates **one client per request** via `createYahooFinanceClient()`, threaded through the call chain so a 30-symbol batch still performs a single crumb fetch rather than thirty.
+   - Cost: a cold request pays the crumb flow once (~1.3 s for a 28-symbol batch); subsequent requests are served from KV in ~25 ms, and no client is created at all when every symbol is still cached.
+   - This race is invisible under Node, so the invariant is enforced by `tests/yahooClientLifecycle.test.ts` (no module-scope instantiation, single factory, one client per batch).
+
+### Verifying the Workers behaviour locally
+
+Node cannot reproduce the race, so validate against `workerd` after touching the Yahoo client:
+
+```bash
+npm run build                      # opennextjs-cloudflare build
+npx wrangler dev --port 8788       # local workerd runtime
+
+# Fire concurrent requests; all must answer 200. Before the fix, 2 of 3
+# returned 500 and the log showed the cross-request promise warning.
+for i in 1 2 3 4 5 6 7 8; do
+  curl -s -o /dev/null -w "%{http_code}\n" \
+    "http://127.0.0.1:8788/api/tickers/quote?symbols=AAPL,MSFT,NVDA,META,AMZN,GOOGL" &
+done; wait
+```
 
 ---
 
