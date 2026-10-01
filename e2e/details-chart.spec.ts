@@ -88,16 +88,18 @@ test.describe('Ticker details chart resilience', () => {
     await expect(cards.first()).toBeVisible({ timeout: 20000 });
     if ((await cards.count()) < 2) test.skip(true, 'needs at least two tickers');
 
+    const second = (await cards.nth(1).getAttribute('data-symbol'))!;
+
     await cards.nth(0).click();
     await expect(page.locator('.recharts-surface').first()).toBeVisible({ timeout: 30000 });
-    await page.getByRole('button', { name: 'Close details modal' }).click();
+    await page.locator('button[aria-label="Back to Dashboard"]').click();
+    await expect(page).toHaveURL(/\/$/);
     await expect(page.locator('.recharts-surface')).toHaveCount(0);
 
-    await cards.nth(1).click();
+    await page.locator(`[data-symbol="${second}"]`).first().click();
     // The heading must match the newly opened symbol, and the chart must be
     // loading rather than showing the previous symbol's series.
-    const second = await cards.nth(1).getAttribute('data-symbol');
-    await expect(page.getByRole('heading', { name: second! })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: second })).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.recharts-surface').first()).toBeVisible({ timeout: 30000 });
   });
 });

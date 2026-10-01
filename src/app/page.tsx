@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { I18nProvider, useI18n } from '@/context/I18nContext';
 import { Navbar } from './components/Navbar';
 import { AuthModal } from './components/AuthModal';
 import { TickerSearchModal } from './components/TickerSearchModal';
-import { TickerDetailsModal } from './components/TickerDetailsModal';
 import { EditTrackingModal } from './components/EditTrackingModal';
 import { AccountSettingsModal } from './components/AccountSettingsModal';
 import { Footer } from './components/Footer';
@@ -39,14 +39,24 @@ import {
 function Dashboard() {
   const { user, openAuthModal } = useAuth();
   const { t } = useI18n();
+  const router = useRouter();
   const [tickers, setTickers] = useState<UserTicker[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
-  const [selectedTicker, setSelectedTicker] = useState<UserTicker | null>(null);
   const [editingTicker, setEditingTicker] = useState<UserTicker | null>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('custom');
+
+  /**
+   * Open the full-page ticker view. Pushing a real route (instead of toggling
+   * local modal state) means the browser back button, deep links and PWA
+   * shortcuts all work, and the page paints once with its final layout.
+   */
+  const openTickerDetails = useCallback(
+    (ticker: UserTicker) => router.push(`/ticker/${encodeURIComponent(ticker.symbol)}`),
+    [router]
+  );
 
   // Load user's preferred display mode from localStorage
   useEffect(() => {
@@ -313,10 +323,6 @@ function Dashboard() {
     setTickers(updated);
     await saveLocalTickers(updated);
 
-    if (selectedTicker?.id === ticker.id) {
-      setSelectedTicker(null);
-    }
-
     if (user) {
       await fetch(`/api/tickers?id=${encodeURIComponent(ticker.id)}`, {
         method: 'DELETE',
@@ -506,7 +512,7 @@ function Dashboard() {
                               totalCount={group.tickers.length}
                               onMoveUp={() => {}}
                               onMoveDown={() => {}}
-                              onClick={(t) => setSelectedTicker(t)}
+                              onClick={openTickerDetails}
                               onEdit={(t) => setEditingTicker(t)}
                               onDelete={(t) => handleDeleteTicker(t)}
                             />
@@ -525,7 +531,7 @@ function Dashboard() {
                           totalCount={group.tickers.length}
                           onMoveUp={() => {}}
                           onMoveDown={() => {}}
-                          onClick={(t) => setSelectedTicker(t)}
+                          onClick={openTickerDetails}
                           onEdit={(t) => setEditingTicker(t)}
                           onDelete={(t) => handleDeleteTicker(t)}
                         />
@@ -563,7 +569,7 @@ function Dashboard() {
                           totalCount={displayedTickers.length}
                           onMoveUp={() => {}}
                           onMoveDown={() => {}}
-                          onClick={(t) => setSelectedTicker(t)}
+                          onClick={openTickerDetails}
                           onEdit={(t) => setEditingTicker(t)}
                           onDelete={(t) => handleDeleteTicker(t)}
                         />
@@ -582,7 +588,7 @@ function Dashboard() {
                       totalCount={displayedTickers.length}
                       onMoveUp={() => {}}
                       onMoveDown={() => {}}
-                      onClick={(t) => setSelectedTicker(t)}
+                      onClick={openTickerDetails}
                       onEdit={(t) => setEditingTicker(t)}
                       onDelete={(t) => handleDeleteTicker(t)}
                     />
@@ -618,7 +624,7 @@ function Dashboard() {
                           totalCount={tickers.length}
                           onMoveUp={() => handleMove(idx, 'up')}
                           onMoveDown={() => handleMove(idx, 'down')}
-                          onClick={(t) => setSelectedTicker(t)}
+                          onClick={openTickerDetails}
                           onEdit={(t) => setEditingTicker(t)}
                           onDelete={(t) => handleDeleteTicker(t)}
                         />
@@ -655,7 +661,7 @@ function Dashboard() {
                       isReorderMode={displayMode === 'reorder'}
                       onMoveUp={() => handleMove(idx, 'up')}
                       onMoveDown={() => handleMove(idx, 'down')}
-                      onClick={(t) => setSelectedTicker(t)}
+                      onClick={openTickerDetails}
                       onEdit={(t) => setEditingTicker(t)}
                       onDelete={(t) => handleDeleteTicker(t)}
                     />
@@ -773,41 +779,6 @@ function Dashboard() {
         onClose={() => setSearchModalOpen(false)}
         onAddTicker={handleAddTicker}
         existingSymbols={existingSymbols}
-      />
-      <TickerDetailsModal
-        ticker={selectedTicker}
-        isOpen={!!selectedTicker}
-        onClose={() => setSelectedTicker(null)}
-        onEditTracking={(t) => {
-          setSelectedTicker(null);
-          setEditingTicker(t);
-        }}
-        onDeleteTicker={(t) => {
-          setSelectedTicker(null);
-          handleDeleteTicker(t);
-        }}
-        onMoveUp={
-          selectedTicker
-            ? () => {
-                const idx = tickers.findIndex((t) => t.id === selectedTicker.id);
-                if (idx > 0) handleMove(idx, 'up');
-              }
-            : undefined
-        }
-        onMoveDown={
-          selectedTicker
-            ? () => {
-                const idx = tickers.findIndex((t) => t.id === selectedTicker.id);
-                if (idx !== -1 && idx < tickers.length - 1) handleMove(idx, 'down');
-              }
-            : undefined
-        }
-        isFirst={selectedTicker ? tickers.findIndex((t) => t.id === selectedTicker.id) === 0 : true}
-        isLast={
-          selectedTicker
-            ? tickers.findIndex((t) => t.id === selectedTicker.id) === tickers.length - 1
-            : true
-        }
       />
       <EditTrackingModal
         ticker={editingTicker}

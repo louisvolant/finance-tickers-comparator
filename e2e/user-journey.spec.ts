@@ -53,14 +53,16 @@ test.describe('Full User Journey E2E', () => {
       await page.waitForTimeout(500);
     }
 
-    // 7. Click ticker to view details modal & price chart
+    // 7. Click ticker to open the full-page details view & price chart
     await page.locator('[data-symbol="AAPL"]').first().click();
+    await expect(page).toHaveURL(/\/ticker\/AAPL$/);
     await expect(
       page.getByText('Price History', { exact: true }).or(page.getByText('Historique des cours', { exact: true }))
-    ).toBeVisible({ timeout: 5000 });
+    ).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/52-Week Range|Fourchette 52 semaines/i)).toBeVisible();
-    // Close details modal
-    await page.locator('button[aria-label="Close details modal"]').click();
+    // Return to the watchlist via the back-to-dashboard arrow
+    await page.locator('button[aria-label="Back to Dashboard"]').click();
+    await expect(page).toHaveURL(/\/$/);
 
     // 8. Reorder tickers: move first ticker down
     const downButtons = page.locator('button[title*="down" i], button[title*="bas" i]');

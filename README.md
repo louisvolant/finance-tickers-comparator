@@ -29,11 +29,11 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - **Title Row**: `Ma liste de tickers (X tickers)` on the left with the **Display Mode Selector** docked right.
   - **Action Row**: Search bar and `+` button docked left, and manual **Refresh button** docked right.
 - **Comprehensive Forward P/E Educational Guide**: Integrated breakdown detailing how Forward P/E is calculated, Wall Street & European analyst consensus mechanisms, forecast horizons (NTM / next FY), Trailing vs. Forward comparisons, and key analytical limitations.
-- **Optional Reference Target & % Diff**: Add or update your cost basis anytime directly from the ticker row, mobile card details, or dedicated modal. Ticker-Tracker automatically highlights the percentage variance (`% Diff`) in real time, or displays clean pricing without any target requirements.
+- **Optional Reference Target & % Diff**: Add or update your cost basis anytime directly from the ticker row, the mobile card details, or the ticker page. Ticker-Tracker automatically highlights the percentage variance (`% Diff`) in real time, or displays clean pricing without any target requirements.
 - **Zero-Latency Mobile & Desktop Startup (IndexedDB)**: Saved tickers and quotes are stored locally in IndexedDB, rendering your dashboard instantly upon opening your phone, with background stale-while-revalidate reloads.
 - **Progressive Web App (PWA)**: Installable on iOS, Android, and Desktop with offline caching via Service Worker and web app manifest.
 - **Multimodal Search (Ticker, Label & ISIN)**: Search stocks by symbol (e.g. `PUST`, `WPEA`), company name / ETF label (e.g. `LVMH`, `AIRBUS`, `SCHNEIDER`), or official ISIN codes (e.g. `FR0011871110`, `FR001400Q9V2`), supplemented by live Yahoo Finance search.
-- **Interactive Financial Stats & Charts**: Detailed modal with historical price trends, 52-week ranges, dividend yields, EPS, market capitalization, and beta.
+- **Interactive Financial Stats & Charts**: Full-page ticker view at `/ticker/[symbol]` with historical price trends, 52-week ranges, dividend yields, EPS, market capitalization, and beta. Deep-linkable, browser-back friendly, and stable on mobile (no two-pass reflow).
 - **Flexible Display & Sorting Modes (Custom, Reorganize, Alphabetical, By Trading Exchange)**: Switch seamlessly with the dropdown button docked right on the title bar:
   - **Custom Order (Liste ordonnée)**: User-defined sequence saved to IndexedDB and Cloudflare KV.
   - **Reorganize (Réorganisation)**: Tactile up/down reorder buttons on each ticker card.
@@ -194,6 +194,7 @@ Covers:
 - Multimodal search across tickers (`PUST`), company labels (`LVMH`, `AIRBUS`), and ISIN codes (`FR001400Q9V2`).
 - Navigation and internationalization: privacy page, terms page, dynamic language switching across 6 locales, and footer verification (`Personal Page`, `Portfolio`).
 - Price history resilience: transparent recovery when the details request fails on first open, correct loading state (never a premature "no chart points" message), non-empty `1MO` series on first render, and no chart bleed-through between two tickers.
+- Ticker details full page: real route navigation, back arrow to the dashboard, deep-linking and reload survival, browser back button, per-symbol page metadata, range switching, and stable single-column mobile layout with no reflow.
 
 ---
 
@@ -224,6 +225,10 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
 - `GET /api/tickers/search?q={query}`: Search tickers across curated catalog and global exchanges.
 - `GET /api/tickers/quote?symbols={AAPL,MC.PA,...}`: Fetch single or batch quotes with valuation multiples.
 - `GET /api/tickers/details?symbol={symbol}&range={1mo}`: Retrieve historical chart time series and detailed statistics. Supported ranges: `1d`, `5d`, `1mo`, `6mo`, `1y`, `5y`.
+
+### Pages
+- `/`: Watchlist dashboard (quotes, valuation multiples, display modes, tracking targets).
+- `/ticker/[symbol]`: Full-page ticker view — live price, trailing & forward P/E, 52-week range, price history chart, key statistics and the sell-side earnings consensus table. Deep-linkable, with a back-to-dashboard arrow in the header. Replaces the former centred details modal, which painted in two passes on mobile and reflowed once its data arrived.
 
 ### Watchlist Management
 - `GET /api/tickers`: Retrieve authenticated user's tickers enriched with quotes.

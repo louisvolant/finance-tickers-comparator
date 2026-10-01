@@ -1,0 +1,38 @@
+import type { Metadata } from 'next';
+import { TickerDetailsPage } from '@/app/components/TickerDetailsPage';
+import { AuthProvider } from '@/context/AuthContext';
+
+interface PageProps {
+  params: Promise<{ symbol: string }>;
+}
+
+/**
+ * Per-symbol metadata for the full-page ticker view (deep-linkable, so search
+ * engines and link previews get a meaningful title).
+ */
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { symbol } = await params;
+  const clean = decodeURIComponent(symbol).toUpperCase();
+  return {
+    title: `${clean} — Price History, P/E & Analyst Forecasts`,
+    description: `Detailed view for ${clean}: live price, trailing and forward P/E multiples, 52-week range, price history chart and sell-side earnings consensus.`,
+  };
+}
+
+/**
+ * Full-page replacement for the old centred details modal. Rendering it as a
+ * real route fixes the two-pass mobile layout (the modal painted before its
+ * content arrived) and gives the browser back button, deep links and PWA
+ * shortcuts for free.
+ */
+export default async function TickerDetailsRoute({ params }: PageProps) {
+  const { symbol } = await params;
+  // AuthProvider is declared per-page in this app, so the route has to supply
+  // its own instance to resolve whether the symbol belongs to a signed-in
+  // user's watchlist or to a guest's local store.
+  return (
+    <AuthProvider>
+      <TickerDetailsPage symbol={decodeURIComponent(symbol).toUpperCase()} />
+    </AuthProvider>
+  );
+}
