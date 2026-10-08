@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { ArrowUp, ArrowDown, ChevronUp, ChevronDown, Sunrise, Moon } from 'lucide-react';
 import { UserTicker } from '@/lib/types';
-import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass, getCurrentPeBadgeClass } from '@/lib/utils';
+import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass, getCurrentPeBadgeClass, flashMovedElement } from '@/lib/utils';
 import { resolveTracking } from '@/lib/tracking';
 import { useI18n } from '@/context/I18nContext';
 import { useCurrencyRates } from '@/context/CurrencyContext';
@@ -18,6 +18,8 @@ interface TickerCardProps {
   onEdit: (ticker: UserTicker) => void;
   onDelete: (ticker: UserTicker) => void;
   isReorderMode?: boolean;
+  /** Changes whenever this card has just been moved, to replay the highlight. */
+  flashKey?: number;
 }
 
 export function TickerCard({
@@ -30,9 +32,17 @@ export function TickerCard({
   onEdit,
   onDelete,
   isReorderMode = false,
+  flashKey,
 }: TickerCardProps) {
   const { t } = useI18n();
   const { rates } = useCurrencyRates();
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!flashKey) return;
+    const animation = flashMovedElement(cardRef.current);
+    return () => animation?.cancel();
+  }, [flashKey]);
   const quote = ticker.quote;
   const currentPrice = quote?.price ?? 0;
   const isPositiveToday = (quote?.changePercent ?? 0) >= 0;
@@ -51,6 +61,7 @@ export function TickerCard({
 
   return (
     <div
+      ref={cardRef}
       data-symbol={ticker.symbol}
       onClick={() => {
         if (!isReorderMode) {

@@ -15,6 +15,7 @@ import { TickerRow } from './components/TickerRow';
 import { TickerCard } from './components/TickerCard';
 import { DisplayModeSelector } from './components/DisplayModeSelector';
 import { DisplayMode, groupTickersByExchange } from '@/lib/displayModes';
+import { MOVED_TICKER_STORAGE_KEY } from '@/lib/utils';
 import {
   getLocalTickers,
   saveLocalTickers,
@@ -48,6 +49,8 @@ function Dashboard() {
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [editingTicker, setEditingTicker] = useState<UserTicker | null>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('custom');
+  const [flash, setFlash] = useState<{ id: string; key: number } | null>(null);
+  const flashFor = (id: string) => (flash && flash.id === id ? flash.key : undefined);
 
   /**
    * Open the full-page ticker view. Pushing a real route (instead of toggling
@@ -65,6 +68,17 @@ function Dashboard() {
       const saved = localStorage.getItem('ticker_tracker_display_mode') as DisplayMode;
       if (saved === 'custom' || saved === 'alphabetical' || saved === 'by_exchange' || saved === 'reorder') {
         setDisplayMode(saved);
+      }
+    } catch {}
+  }, []);
+
+  // A ticker moved from its own page is highlighted once back on the dashboard.
+  useEffect(() => {
+    try {
+      const movedId = sessionStorage.getItem(MOVED_TICKER_STORAGE_KEY);
+      if (movedId) {
+        sessionStorage.removeItem(MOVED_TICKER_STORAGE_KEY);
+        setFlash({ id: movedId, key: Date.now() });
       }
     } catch {}
   }, []);
@@ -220,6 +234,7 @@ function Dashboard() {
 
     // Optimistic UI update
     setTickers(newOrder);
+    setFlash({ id: moved.id, key: Date.now() });
 
     // Update IndexedDB
     const orderedIds = newOrder.map((t) => t.id);
@@ -632,6 +647,7 @@ function Dashboard() {
                           ticker={ticker}
                           index={idx}
                           totalCount={tickers.length}
+                          flashKey={flashFor(ticker.id)}
                           onMoveUp={() => handleMove(idx, 'up')}
                           onMoveDown={() => handleMove(idx, 'down')}
                           onClick={openTickerDetails}
@@ -669,6 +685,7 @@ function Dashboard() {
                       index={idx}
                       totalCount={tickers.length}
                       isReorderMode={displayMode === 'reorder'}
+                      flashKey={flashFor(ticker.id)}
                       onMoveUp={() => handleMove(idx, 'up')}
                       onMoveDown={() => handleMove(idx, 'down')}
                       onClick={openTickerDetails}

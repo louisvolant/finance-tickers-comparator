@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { ArrowUp, ArrowDown, ChevronUp, ChevronDown, BarChart2, Edit2, Trash2, Sunrise, Moon } from 'lucide-react';
 import { UserTicker } from '@/lib/types';
-import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass, getCurrentPeBadgeClass } from '@/lib/utils';
+import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass, getCurrentPeBadgeClass, flashMovedElement } from '@/lib/utils';
 import { resolveTracking } from '@/lib/tracking';
 import { useI18n } from '@/context/I18nContext';
 import { useCurrencyRates } from '@/context/CurrencyContext';
@@ -17,6 +17,8 @@ interface TickerRowProps {
   onClick: (ticker: UserTicker) => void;
   onEdit: (ticker: UserTicker) => void;
   onDelete: (ticker: UserTicker) => void;
+  /** Changes whenever this row has just been moved, to replay the highlight. */
+  flashKey?: number;
 }
 
 export function TickerRow({
@@ -28,9 +30,17 @@ export function TickerRow({
   onClick,
   onEdit,
   onDelete,
+  flashKey,
 }: TickerRowProps) {
   const { t } = useI18n();
   const { rates } = useCurrencyRates();
+  const rowRef = useRef<HTMLTableRowElement>(null);
+
+  useEffect(() => {
+    if (!flashKey) return;
+    const animation = flashMovedElement(rowRef.current);
+    return () => animation?.cancel();
+  }, [flashKey]);
   const quote = ticker.quote;
   const currentPrice = quote?.price ?? 0;
   const tracking = useMemo(() => resolveTracking(ticker, quote, rates), [ticker, quote, rates]);
@@ -51,6 +61,7 @@ export function TickerRow({
 
   return (
     <tr
+      ref={rowRef}
       data-symbol={ticker.symbol}
       onClick={() => onClick(ticker)}
       className="group border-b border-slate-800/60 hover:bg-slate-900/60 transition cursor-pointer"

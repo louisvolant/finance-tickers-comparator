@@ -31,6 +31,7 @@ import {
   getForwardPeCardClass,
   getCurrentPeCardClass,
   fetchJsonWithRetry,
+  MOVED_TICKER_STORAGE_KEY,
 } from '@/lib/utils';
 import { getLocalTickers, saveLocalTickers, reorderLocalTickers } from '@/lib/indexedDb';
 import { resolveTracking } from '@/lib/tracking';
@@ -211,6 +212,9 @@ export function TickerDetailsPage({ symbol }: { symbol: string }) {
       }
     }
 
+    try {
+      sessionStorage.setItem(MOVED_TICKER_STORAGE_KEY, moved);
+    } catch {}
     goHome();
   };
 

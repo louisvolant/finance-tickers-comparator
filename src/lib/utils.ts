@@ -5,6 +5,25 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** sessionStorage key carrying the id of a ticker moved from its own page back to the dashboard. */
+export const MOVED_TICKER_STORAGE_KEY = 'tt_moved_ticker';
+
+/**
+ * Briefly tint a row or card to show where a moved ticker landed, then fade it
+ * out over ~2s. Uses the Web Animations API so that moving the same ticker
+ * again simply restarts the fade.
+ */
+export function flashMovedElement(el: HTMLElement | null): Animation | null {
+  if (!el || typeof el.animate !== 'function') return null;
+  return el.animate(
+    [
+      { backgroundColor: 'rgba(16, 185, 129, 0.28)' },
+      { backgroundColor: 'rgba(16, 185, 129, 0)' },
+    ],
+    { duration: 2000, easing: 'ease-in' }
+  );
+}
+
 export function formatCurrency(value: number | null | undefined, currency: string = 'USD'): string {
   if (value === null || value === undefined || isNaN(value)) return '—';
   
