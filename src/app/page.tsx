@@ -246,6 +246,7 @@ function Dashboard() {
     symbol: string;
     name: string;
     trackingValue: number | null;
+    trackingCurrency?: string | null;
     notes?: string;
   }) => {
     if (user) {
@@ -281,6 +282,7 @@ function Dashboard() {
         symbol: payload.symbol.toUpperCase(),
         name: payload.name,
         trackingValue: payload.trackingValue,
+        trackingCurrency: payload.trackingCurrency ?? null,
         notes: payload.notes,
         order: tickers.length,
         createdAt: Date.now(),
@@ -299,8 +301,15 @@ function Dashboard() {
   /**
    * Edit Tracking Value Handler
    */
-  const handleSaveTracking = async (id: string, trackingValue: number | null, notes?: string) => {
-    const updated = tickers.map((t) => (t.id === id ? { ...t, trackingValue, notes } : t));
+  const handleSaveTracking = async (
+    id: string,
+    trackingValue: number | null,
+    trackingCurrency: string | null,
+    notes?: string
+  ) => {
+    const updated = tickers.map((t) =>
+      t.id === id ? { ...t, trackingValue, trackingCurrency, notes } : t
+    );
     setTickers(updated);
     await saveLocalTickers(updated);
 
@@ -308,7 +317,7 @@ function Dashboard() {
       await fetch('/api/tickers', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, trackingValue, notes }),
+        body: JSON.stringify({ id, trackingValue, trackingCurrency, notes }),
       });
     }
   };
@@ -786,6 +795,14 @@ function Dashboard() {
         isOpen={!!editingTicker}
         onClose={() => setEditingTicker(null)}
         onSave={handleSaveTracking}
+        onOpenCurrencySettings={() => {
+          setEditingTicker(null);
+          if (user) {
+            setAccountModalOpen(true);
+          } else {
+            openAuthModal('register');
+          }
+        }}
       />
 
       {/* Hidden iOS Safari Switch element for haptic Taptic Engine click */}

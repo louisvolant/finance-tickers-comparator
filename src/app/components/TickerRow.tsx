@@ -1,10 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ArrowUp, ArrowDown, ChevronUp, ChevronDown, BarChart2, Edit2, Trash2, Sunrise, Moon } from 'lucide-react';
 import { UserTicker } from '@/lib/types';
 import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass, getCurrentPeBadgeClass } from '@/lib/utils';
+import { resolveTracking } from '@/lib/tracking';
 import { useI18n } from '@/context/I18nContext';
+import { useCurrencyRates } from '@/context/CurrencyContext';
 
 interface TickerRowProps {
   ticker: UserTicker;
@@ -28,11 +30,13 @@ export function TickerRow({
   onDelete,
 }: TickerRowProps) {
   const { t } = useI18n();
+  const { rates } = useCurrencyRates();
   const quote = ticker.quote;
   const currentPrice = quote?.price ?? 0;
-  const trackingVal = ticker.trackingValue;
-  const hasTracking = trackingVal !== null && trackingVal !== undefined && trackingVal > 0;
-  const diffPercent = hasTracking ? ((currentPrice - trackingVal!) / trackingVal!) * 100 : 0;
+  const tracking = useMemo(() => resolveTracking(ticker, quote, rates), [ticker, quote, rates]);
+  const hasTracking = tracking.hasTracking;
+  const hasDiff = hasTracking && tracking.conversionAvailable && tracking.diffPercent !== null;
+  const diffPercent = tracking.diffPercent ?? 0;
   const isPositiveDiff = diffPercent >= 0;
   const isPositiveToday = (quote?.changePercent ?? 0) >= 0;
 
@@ -128,10 +132,23 @@ export function TickerRow({
       <td className="py-1.5 px-3 text-right">
         {hasTracking ? (
           <>
-            <div className="text-sm font-semibold text-slate-300">
-              {formatCurrency(trackingVal!, quote?.currency)}
+            <div
+              data-testid={`tracking-value-${ticker.symbol}`}
+              className="text-sm font-semibold text-slate-300"
+            >
+              {formatCurrency(tracking.originalValue!, tracking.originalCurrency)}
             </div>
-            <span className="text-[10px] text-slate-500 block">{t('watchlist.baseline')}</span>
+            {tracking.converted && tracking.comparisonValue !== null ? (
+              <span
+                data-testid={`tracking-converted-${ticker.symbol}`}
+                className="text-[10px] text-cyan-400/80 block"
+                title={`${tracking.originalCurrency} → ${tracking.comparisonCurrency}`}
+              >
+                ≈ {formatCurrency(tracking.comparisonValue, tracking.comparisonCurrency)}
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-500 block">{t('watchlist.baseline')}</span>
+            )}
           </>
         ) : (
           <span className="text-xs text-slate-500">—</span>
@@ -140,8 +157,9 @@ export function TickerRow({
 
       {/* % Diff vs Tracking Value */}
       <td className="py-1.5 px-3 text-center">
-        {hasTracking ? (
+        {hasDiff ? (
           <span
+            data-testid={`tracking-diff-${ticker.symbol}`}
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-black tracking-wide border ${
               isPositiveDiff
                 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'

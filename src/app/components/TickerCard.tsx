@@ -1,10 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ArrowUp, ArrowDown, ChevronUp, ChevronDown, Sunrise, Moon } from 'lucide-react';
 import { UserTicker } from '@/lib/types';
 import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeClass, getForwardPeBadgeClass, getCurrentPeBadgeClass } from '@/lib/utils';
+import { resolveTracking } from '@/lib/tracking';
 import { useI18n } from '@/context/I18nContext';
+import { useCurrencyRates } from '@/context/CurrencyContext';
 
 interface TickerCardProps {
   ticker: UserTicker;
@@ -30,9 +32,14 @@ export function TickerCard({
   isReorderMode = false,
 }: TickerCardProps) {
   const { t } = useI18n();
+  const { rates } = useCurrencyRates();
   const quote = ticker.quote;
   const currentPrice = quote?.price ?? 0;
   const isPositiveToday = (quote?.changePercent ?? 0) >= 0;
+
+  const tracking = useMemo(() => resolveTracking(ticker, quote, rates), [ticker, quote, rates]);
+  const hasDiff = tracking.hasTracking && tracking.conversionAvailable && tracking.diffPercent !== null;
+  const isPositiveDiff = (tracking.diffPercent ?? 0) >= 0;
 
   // Extended session (Pre-market 🌅 / After-hours 🌙 / Futures)
   const hasExtended =
@@ -92,6 +99,21 @@ export function TickerCard({
               )}`}
             >
               Fwd {formatMultiple(quote.forwardPE)}
+            </span>
+          ) : null}
+
+          {/* Reference target % diff (mobile parity with desktop table) */}
+          {hasDiff ? (
+            <span
+              data-testid={`tracking-diff-${ticker.symbol}`}
+              title={`${formatCurrency(tracking.originalValue!, tracking.originalCurrency)} ${t('watchlist.colDiff')}`}
+              className={`px-1.5 py-0.5 rounded text-[10px] font-black border font-mono ${
+                isPositiveDiff
+                  ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25'
+                  : 'text-rose-400 bg-rose-500/10 border-rose-500/25'
+              }`}
+            >
+              {formatPercent(tracking.diffPercent)}
             </span>
           ) : null}
         </div>

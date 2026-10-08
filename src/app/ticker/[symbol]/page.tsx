@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { TickerDetailsPage } from '@/app/components/TickerDetailsPage';
 import { AuthProvider } from '@/context/AuthContext';
+import { CurrencyProvider } from '@/context/CurrencyContext';
 
 interface PageProps {
   params: Promise<{ symbol: string }>;
@@ -45,7 +46,9 @@ export default async function TickerDetailsRoute({ params }: PageProps) {
   // user's watchlist or to a guest's local store.
   return (
     <AuthProvider>
-      <TickerDetailsPage symbol={decodeURIComponent(symbol).toUpperCase()} />
+      <CurrencyProvider>
+        <TickerDetailsPage symbol={decodeURIComponent(symbol).toUpperCase()} />
+      </CurrencyProvider>
     </AuthProvider>
   );
 }

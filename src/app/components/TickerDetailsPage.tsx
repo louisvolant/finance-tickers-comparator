@@ -33,8 +33,10 @@ import {
   fetchJsonWithRetry,
 } from '@/lib/utils';
 import { getLocalTickers, saveLocalTickers, reorderLocalTickers } from '@/lib/indexedDb';
+import { resolveTracking } from '@/lib/tracking';
 import { useI18n } from '@/context/I18nContext';
 import { useAuth } from '@/context/AuthContext';
+import { useCurrencyRates } from '@/context/CurrencyContext';
 import { EditTrackingModal } from './EditTrackingModal';
 
 type TimeRange = '1d' | '5d' | '1mo' | '6mo' | '1y' | '5y';
@@ -79,6 +81,7 @@ async function resolveWatchlistEntry(symbol: string, isAuthenticated: boolean): 
 export function TickerDetailsPage({ symbol }: { symbol: string }) {
   const { t } = useI18n();
   const { user } = useAuth();
+  const { rates } = useCurrencyRates();
   const router = useRouter();
 
   const [range, setRange] = useState<TimeRange>('1mo');
@@ -132,13 +135,20 @@ export function TickerDetailsPage({ symbol }: { symbol: string }) {
   /**
    * Persist a new reference target / notes, locally and server-side.
    */
-  const handleSaveTracking = async (id: string, trackingValue: number | null, notes?: string) => {
+  const handleSaveTracking = async (
+    id: string,
+    trackingValue: number | null,
+    trackingCurrency: string | null,
+    notes?: string
+  ) => {
     if (entry) {
-      const updated = { ...entry, trackingValue, notes };
+      const updated = { ...entry, trackingValue, trackingCurrency, notes };
       setEntry(updated);
       const locals = await getLocalTickers();
       await saveLocalTickers(
-        (locals || []).map((x) => (x.id === id ? { ...x, trackingValue, notes } : x))
+        (locals || []).map((x) =>
+          x.id === id ? { ...x, trackingValue, trackingCurrency, notes } : x
+        )
       );
     }
 
@@ -146,7 +156,7 @@ export function TickerDetailsPage({ symbol }: { symbol: string }) {
       await fetch('/api/tickers', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: entry.id, trackingValue, notes }),
+        body: JSON.stringify({ id: entry.id, trackingValue, trackingCurrency, notes }),
       });
     }
   };
@@ -206,9 +216,14 @@ export function TickerDetailsPage({ symbol }: { symbol: string }) {
 
   const quote = details?.quote || entry?.quote;
   const currentPrice = quote?.price ?? 0;
-  const trackingVal = entry?.trackingValue ?? null;
-  const hasTracking = trackingVal !== null && trackingVal !== undefined && trackingVal > 0;
-  const diffPercent = hasTracking ? ((currentPrice - trackingVal!) / trackingVal!) * 100 : 0;
+  const tracking = resolveTracking(
+    entry ?? { trackingValue: null, trackingCurrency: null },
+    quote,
+    rates
+  );
+  const hasTracking = tracking.hasTracking;
+  const hasDiff = hasTracking && tracking.conversionAvailable && tracking.diffPercent !== null;
+  const diffPercent = tracking.diffPercent ?? 0;
   const isPositiveDiff = diffPercent >= 0;
 
   // Extended session (Pre-market 🌅 / After-hours 🌙 / Futures)
@@ -276,10 +291,10 @@ export function TickerDetailsPage({ symbol }: { symbol: string }) {
                         ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                         : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                     }`}
-                    title={`${t('details.editTracking')}: ${formatCurrency(trackingVal!, quote?.currency)}`}
+                    title={`${t('details.editTracking')}: ${formatCurrency(tracking.originalValue!, tracking.originalCurrency)}`}
                   >
-                    <span>Ref: {formatCurrency(trackingVal!, quote?.currency)}</span>
-                    <span>({formatPercent(diffPercent)})</span>
+                    <span>Ref: {formatCurrency(tracking.originalValue!, tracking.originalCurrency)}</span>
+                    {hasDiff && <span>({formatPercent(diffPercent)})</span>}
                   </button>
                 )}
               </div>
@@ -372,10 +387,21 @@ export function TickerDetailsPage({ symbol }: { symbol: string }) {
                 <Edit2 className="w-3 h-3 text-slate-500 group-hover:text-emerald-400 transition" />
               </div>
               <div className="text-lg sm:text-xl font-bold text-slate-200">
-                {hasTracking ? formatCurrency(trackingVal!, quote?.currency) : '—'}
+                {hasTracking ? formatCurrency(tracking.originalValue!, tracking.originalCurrency) : '—'}
               </div>
-              {hasTracking ? (
+              {hasTracking && tracking.converted && tracking.comparisonValue !== null && (
+                <div
+                  data-testid={`tracking-converted-${symbol}`}
+                  className="text-[10px] text-cyan-400/90 mt-0.5"
+                >
+                  {t('currency.convertedHint', {
+                    value: formatCurrency(tracking.comparisonValue, tracking.comparisonCurrency),
+                  })}
+                </div>
+              )}
+              {hasDiff ? (
                 <span
+                  data-testid={`tracking-diff-${symbol}`}
                   className={`inline-block px-1.5 py-0.2 rounded text-[10px] font-bold mt-1 ${
                     isPositiveDiff ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
                   }`}
