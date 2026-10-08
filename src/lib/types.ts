@@ -35,6 +35,7 @@ export interface UserTicker {
   symbol: string;
   name: string;
   trackingValue: number | null; // Optional personal reference or purchase price to compute % diff
+  trackingCurrency?: string | null; // Currency the reference value is expressed in (null = listing currency)
   notes?: string;
   order: number;
   createdAt: number;
@@ -103,10 +104,12 @@ export interface UserRecord {
   hashedPassword?: string;
   googleId?: string;
   createdAt: number;
+  preferredCurrency?: string; // User's own reference currency (e.g. 'EUR')
 }
 
 export interface SessionUser {
   id: string;
   email: string;
   username: string;
+  preferredCurrency?: string;
 }

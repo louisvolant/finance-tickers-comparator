@@ -3,12 +3,13 @@ import { kvGet, kvPut } from '@/lib/kv';
 import { hashPassword } from '@/lib/authCrypto';
 import { setSessionUser } from '@/lib/session';
 import { UserRecord } from '@/lib/types';
+import { ISO_FIAT_CURRENCIES } from '@/lib/currencies';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, username } = await request.json();
+    const { email, password, username, preferredCurrency } = await request.json();
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return NextResponse.json({ error: 'Valid email address is required' }, { status: 400 });
@@ -30,12 +31,18 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await hashPassword(password);
     const userId = 'usr_' + crypto.randomUUID().replace(/-/g, '');
 
+    const cleanPreferredCurrency =
+      typeof preferredCurrency === 'string' && ISO_FIAT_CURRENCIES.has(preferredCurrency.toUpperCase())
+        ? preferredCurrency.toUpperCase()
+        : undefined;
+
     const newUser: UserRecord = {
       id: userId,
       email: cleanEmail,
       username: cleanUsername,
       hashedPassword,
       createdAt: Date.now(),
+      preferredCurrency: cleanPreferredCurrency,
     };
 
     // Store in KV
@@ -46,6 +53,7 @@ export async function POST(request: NextRequest) {
       id: userId,
       email: cleanEmail,
       username: cleanUsername,
+      preferredCurrency: cleanPreferredCurrency,
     };
 
     await setSessionUser(sessionUser);

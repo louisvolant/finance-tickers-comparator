@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
       id: user.id,
       email: user.email,
       username: user.username,
+      preferredCurrency: user.preferredCurrency,
     });
 
     return NextResponse.redirect(`${origin}?auth_success=true`);

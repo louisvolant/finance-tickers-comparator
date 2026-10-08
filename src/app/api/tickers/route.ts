@@ -3,8 +3,19 @@ import { getSessionUser } from '@/lib/session';
 import { kvGet, kvPut } from '@/lib/kv';
 import { getQuote, getBatchQuotes } from '@/lib/yahooFinance';
 import { UserTicker } from '@/lib/types';
+import { ISO_FIAT_CURRENCIES } from '@/lib/currencies';
 
 export const runtime = 'nodejs';
+
+/**
+ * Validate an optional currency code, returning the normalized uppercase code
+ * or null when missing/invalid.
+ */
+function parseTrackingCurrency(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const code = value.trim().toUpperCase();
+  return ISO_FIAT_CURRENCIES.has(code) ? code : null;
+}
 
 /**
  * GET /api/tickers - Retrieve authenticated user's tickers with live quotes
@@ -52,7 +63,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { symbol, name, trackingValue, notes } = await request.json();
+    const { symbol, name, trackingValue, trackingCurrency, notes } = await request.json();
 
     if (!symbol || typeof symbol !== 'string') {
       return NextResponse.json({ error: 'Symbol is required' }, { status: 400 });
@@ -87,6 +98,7 @@ export async function POST(request: NextRequest) {
       symbol: cleanSymbol,
       name: name || quote.name || cleanSymbol,
       trackingValue: parsedTrackingValue !== null ? Number(parsedTrackingValue.toFixed(4)) : null,
+      trackingCurrency: parseTrackingCurrency(trackingCurrency),
       notes: typeof notes === 'string' ? notes.trim() : '',
       order: tickers.length,
       createdAt: Date.now(),
@@ -113,7 +125,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { id, trackingValue, notes } = await request.json();
+    const { id, trackingValue, trackingCurrency, notes } = await request.json();
 
     if (!id || typeof id !== 'string') {
       return NextResponse.json({ error: 'Ticker ID is required' }, { status: 400 });
@@ -136,6 +148,10 @@ export async function PATCH(request: NextRequest) {
           tickers[tickerIndex].trackingValue = Number(parsed.toFixed(4));
         }
       }
+    }
+
+    if (trackingCurrency !== undefined) {
+      tickers[tickerIndex].trackingCurrency = parseTrackingCurrency(trackingCurrency);
     }
 
     if (notes !== undefined && typeof notes === 'string') {

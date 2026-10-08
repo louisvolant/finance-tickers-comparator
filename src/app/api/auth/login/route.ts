@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       id: user.id,
       email: user.email,
       username: user.username,
+      preferredCurrency: user.preferredCurrency,
     };
 
     await setSessionUser(sessionUser);
