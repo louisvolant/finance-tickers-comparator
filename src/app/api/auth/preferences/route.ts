@@ -16,7 +16,12 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { preferredCurrency } = await request.json();
+    let preferredCurrency: unknown;
+    try {
+      ({ preferredCurrency } = await request.json());
+    } catch {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
 
     if (typeof preferredCurrency !== 'string' || !ISO_FIAT_CURRENCIES.has(preferredCurrency.toUpperCase())) {
       return NextResponse.json({ error: 'Invalid currency code' }, { status: 400 });
