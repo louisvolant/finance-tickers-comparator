@@ -29,7 +29,7 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - **Title Row**: `Ma liste de tickers (X tickers)` on the left with the **Display Mode Selector** docked right.
   - **Action Row**: Search bar and `+` button docked left, and manual **Refresh button** docked right.
 - **Comprehensive Forward P/E Educational Guide**: Integrated breakdown detailing how Forward P/E is calculated, Wall Street & European analyst consensus mechanisms, forecast horizons (NTM / next FY), Trailing vs. Forward comparisons, and key analytical limitations.
-- **Optional Reference Target & % Diff**: Add or update your cost basis anytime directly from the ticker row, the mobile card details, or the ticker page. Ticker-Tracker automatically highlights the percentage variance (`% Diff`) in real time, or displays clean pricing without any target requirements.
+- **Optional Reference Target & % Diff (Multi-Currency)**: Add or update your cost basis anytime directly from the ticker row, the mobile card details, or the ticker page. Enter the reference value either in the ticker's **listing currency** (default) or in **your own reference currency** (configured in Account Settings), and Ticker-Tracker converts it on the fly using live EUR-based rates to compute an FX-inclusive `% Diff` on desktop and mobile. Ticker-Tracker automatically highlights the percentage variance (`% Diff`) in real time, or displays clean pricing without any target requirements.
 - **Zero-Latency Mobile & Desktop Startup (IndexedDB)**: Saved tickers and quotes are stored locally in IndexedDB, rendering your dashboard instantly upon opening your phone, with background stale-while-revalidate reloads.
 - **Progressive Web App (PWA)**: Installable on iOS, Android, and Desktop with offline caching via Service Worker and web app manifest.
 - **Multimodal Search (Ticker, Label & ISIN)**: Search stocks by symbol (e.g. `PUST`, `WPEA`), company name / ETF label (e.g. `LVMH`, `AIRBUS`, `SCHNEIDER`), or official ISIN codes (e.g. `FR0011871110`, `FR001400Q9V2`), supplemented by live Yahoo Finance search.
@@ -252,6 +252,7 @@ done; wait
 - `GET /api/tickers/search?q={query}`: Search tickers across curated catalog and global exchanges.
 - `GET /api/tickers/quote?symbols={AAPL,MC.PA,...}`: Fetch single or batch quotes with valuation multiples.
 - `GET /api/tickers/details?symbol={symbol}&range={1mo}`: Retrieve historical chart time series and detailed statistics. Supported ranges: `1d`, `5d`, `1mo`, `6mo`, `1y`, `5y`.
+- `GET /api/rates`: EUR-based fiat exchange rates (cached 24h in KV) used for reference-value currency conversion.
 
 ### Pages
 - `/`: Watchlist dashboard (quotes, valuation multiples, display modes, tracking targets).
@@ -271,6 +272,7 @@ The ticker page renders per-user data: the **reference target (cost basis)**, th
 Offline note: because `/ticker/` is deliberately not cached, opening it with no network shows the browser's offline state rather than a stale page. That is intentional — a cached page could replay another user's reference target on a shared device.
 
 Guarded by `tests/tickerCachePolicy.test.ts` (config-level header assertions) and `e2e/ticker-cache-privacy.spec.ts` (runtime headers, absence of personalized markers in the SSR HTML, and a Cache Storage inspection proving nothing under `/ticker/` or `/api/tickers` is ever persisted).
+Guarded by `tests/tickerCachePolicy.test.ts` (config-level header assertions) and `e2e/ticker-cache-privacy.spec.ts` (runtime headers, absence of personalized markers in the SSR HTML, and a Cache Storage inspection proving nothing under `/ticker/` or `/api/tickers` is ever persisted).
 
 ### Watchlist Management
 - `GET /api/tickers`: Retrieve authenticated user's tickers enriched with quotes.
@@ -287,4 +289,5 @@ Guarded by `tests/tickerCachePolicy.test.ts` (config-level header assertions) an
 - `GET /api/auth/google`: Initiate Google OAuth 2.0 authorization redirect.
 - `GET /api/auth/callback/google`: Handle Google OAuth token exchange and session creation.
 - `POST /api/auth/changepassword`: Change password with verification of existing password.
+- `PATCH /api/auth/preferences`: Update the user's preferred reference currency (used for multi-currency tracking).
 - `DELETE /api/auth/delete_my_account`: Permanently delete user profile and associated watchlist data from KV.
