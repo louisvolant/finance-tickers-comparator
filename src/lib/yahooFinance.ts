@@ -1,5 +1,6 @@
 import YahooFinance from 'yahoo-finance2';
 import { kvGet, kvPut } from './kv';
+import { normalizeCurrency } from './currencies';
 import { TickerQuote, TickerSearchResult, ChartPoint, TickerDetails, ForwardConsensusData, EarningsEstimatePeriod } from './types';
 
 /**
@@ -49,18 +50,28 @@ const CHART_CACHE_TTL_SEC = 600; // Cache chart data for 10 minutes in KV
  */
 function normalizeQuote(raw: any, symbolOverride?: string): TickerQuote {
   const sym = (raw.symbol || symbolOverride || '').toUpperCase();
-  const price = raw.regularMarketPrice ?? 0;
+
+  // Normalize Yahoo minor units (pence "GBp", cents "ZAc", "ILA") into their
+  // major ISO currency so prices, EPS and reference-value conversions line up.
+  const { code: currency, factor } = normalizeCurrency(raw.currency || 'USD');
+
+  const price = (raw.regularMarketPrice ?? 0) / factor;
+  const epsForwardRaw = raw.epsForward !== undefined && raw.epsForward !== null ? Number(raw.epsForward) / factor : null;
+  const epsTrailingRaw =
+    raw.epsTrailingTwelveMonths !== undefined && raw.epsTrailingTwelveMonths !== null
+      ? Number(raw.epsTrailingTwelveMonths) / factor
+      : null;
 
   // Safe calculation for Trailing PE if missing
   let trailingPE = raw.trailingPE ?? null;
-  if (!trailingPE && raw.epsTrailingTwelveMonths && raw.epsTrailingTwelveMonths > 0 && price > 0) {
-    trailingPE = Number((price / raw.epsTrailingTwelveMonths).toFixed(2));
+  if (!trailingPE && epsTrailingRaw && epsTrailingRaw > 0 && price > 0) {
+    trailingPE = Number((price / epsTrailingRaw).toFixed(2));
   }
 
   // Safe calculation for Forward PE if missing
   let forwardPE = raw.forwardPE ?? null;
-  if (!forwardPE && raw.epsForward && raw.epsForward > 0 && price > 0) {
-    forwardPE = Number((price / raw.epsForward).toFixed(2));
+  if (!forwardPE && epsForwardRaw && epsForwardRaw > 0 && price > 0) {
+    forwardPE = Number((price / epsForwardRaw).toFixed(2));
   }
 
   // Extended session calculation (Pre-market / After-market / Futures)
@@ -69,12 +80,12 @@ function normalizeQuote(raw: any, symbolOverride?: string): TickerQuote {
   let extendedChange: number | null = null;
   let extendedChangePercent: number | null = null;
 
-  const prePrice = raw.preMarketPrice !== undefined && raw.preMarketPrice !== null ? Number(raw.preMarketPrice) : null;
-  const preChange = raw.preMarketChange !== undefined && raw.preMarketChange !== null ? Number(raw.preMarketChange) : null;
+  const prePrice = raw.preMarketPrice !== undefined && raw.preMarketPrice !== null ? Number(raw.preMarketPrice) / factor : null;
+  const preChange = raw.preMarketChange !== undefined && raw.preMarketChange !== null ? Number(raw.preMarketChange) / factor : null;
   const prePercent = raw.preMarketChangePercent !== undefined && raw.preMarketChangePercent !== null ? Number(raw.preMarketChangePercent) : null;
 
-  const postPrice = raw.postMarketPrice !== undefined && raw.postMarketPrice !== null ? Number(raw.postMarketPrice) : null;
-  const postChange = raw.postMarketChange !== undefined && raw.postMarketChange !== null ? Number(raw.postMarketChange) : null;
+  const postPrice = raw.postMarketPrice !== undefined && raw.postMarketPrice !== null ? Number(raw.postMarketPrice) / factor : null;
+  const postChange = raw.postMarketChange !== undefined && raw.postMarketChange !== null ? Number(raw.postMarketChange) / factor : null;
   const postPercent = raw.postMarketChangePercent !== undefined && raw.postMarketChangePercent !== null ? Number(raw.postMarketChangePercent) : null;
 
   const marketState = raw.marketState || null;
@@ -95,20 +106,23 @@ function normalizeQuote(raw: any, symbolOverride?: string): TickerQuote {
     }
   }
 
+  const fiftyTwoWeekHigh = raw.fiftyTwoWeekHigh !== undefined && raw.fiftyTwoWeekHigh !== null ? Number(raw.fiftyTwoWeekHigh) / factor : null;
+  const fiftyTwoWeekLow = raw.fiftyTwoWeekLow !== undefined && raw.fiftyTwoWeekLow !== null ? Number(raw.fiftyTwoWeekLow) / factor : null;
+
   return {
     symbol: sym,
     name: raw.shortName || raw.longName || sym || 'Unknown',
     price: Number(price.toFixed(4)),
-    change: Number((raw.regularMarketChange ?? 0).toFixed(4)),
+    change: Number(((raw.regularMarketChange ?? 0) / factor).toFixed(4)),
     changePercent: Number((raw.regularMarketChangePercent ?? 0).toFixed(2)),
-    currency: raw.currency || 'USD',
+    currency,
     trailingPE: trailingPE ? Number(trailingPE.toFixed(2)) : null,
     forwardPE: forwardPE ? Number(forwardPE.toFixed(2)) : null,
     marketCap: raw.marketCap ?? null,
     dividendYield: raw.dividendYield ? Number((raw.dividendYield * 100).toFixed(2)) : null,
-    fiftyTwoWeekHigh: raw.fiftyTwoWeekHigh ?? null,
-    fiftyTwoWeekLow: raw.fiftyTwoWeekLow ?? null,
-    epsTrailingTwelveMonths: raw.epsTrailingTwelveMonths ?? null,
+    fiftyTwoWeekHigh,
+    fiftyTwoWeekLow,
+    epsTrailingTwelveMonths: epsTrailingRaw,
     beta: raw.beta ?? null,
     volume: raw.regularMarketVolume ?? null,
     avgVolume: raw.averageDailyVolume3Month ?? null,
@@ -466,10 +480,15 @@ export async function getTickerDetails(
     let forwardConsensus: ForwardConsensusData | undefined = undefined;
     try {
       const summary = await yf.quoteSummary(cleanSymbol, {
-        modules: ['earningsTrend', 'defaultKeyStatistics'],
+        modules: ['earningsTrend', 'defaultKeyStatistics', 'price'],
       });
 
-      const forwardEps = summary?.defaultKeyStatistics?.forwardEps ?? null;
+      // Analyst EPS estimates are expressed in the listing (possibly minor)
+      // currency: normalize them to match our already-normalized quote price.
+      const estFactor = normalizeCurrency(summary?.price?.currency || quote.currency).factor;
+      const rawForwardEps = summary?.defaultKeyStatistics?.forwardEps;
+      const forwardEps =
+        rawForwardEps !== null && rawForwardEps !== undefined ? Number(rawForwardEps) / estFactor : null;
       const trends = summary?.earningsTrend?.trend || [];
       const currentPrice = quote.price;
 
@@ -497,9 +516,9 @@ export async function getTickerDetails(
           periodLabel = 'Next Quarter (Q+1)';
         }
 
-        const avgEps = est.avg !== null && est.avg !== undefined ? Number(est.avg.toFixed(2)) : null;
-        const lowEps = est.low !== null && est.low !== undefined ? Number(est.low.toFixed(2)) : null;
-        const highEps = est.high !== null && est.high !== undefined ? Number(est.high.toFixed(2)) : null;
+        const avgEps = est.avg !== null && est.avg !== undefined ? Number((Number(est.avg) / estFactor).toFixed(2)) : null;
+        const lowEps = est.low !== null && est.low !== undefined ? Number((Number(est.low) / estFactor).toFixed(2)) : null;
+        const highEps = est.high !== null && est.high !== undefined ? Number((Number(est.high) / estFactor).toFixed(2)) : null;
         const impliedForwardPE =
           avgEps && avgEps > 0 && currentPrice > 0 ? Number((currentPrice / avgEps).toFixed(2)) : null;
 
@@ -513,7 +532,7 @@ export async function getTickerDetails(
           highEps,
           numberOfAnalysts: est.numberOfAnalysts ?? null,
           growth: est.growth !== null && est.growth !== undefined ? Number((est.growth * 100).toFixed(1)) : null,
-          currency: est.earningsCurrency || quote.currency || 'USD',
+          currency: quote.currency || 'USD',
           impliedForwardPE,
           upRevisions30d: t.epsRevisions?.upLast30days ?? null,
           downRevisions30d: t.epsRevisions?.downLast30days ?? null,
