@@ -165,7 +165,11 @@
     "deleteAccount": "Konto löschen",
     "deleteWarning": "Löscht Ihr Konto, Ihre Watchlist und alle Daten unwiderruflich.",
     "deleteConfirm": "Sind Sie sicher, dass Sie Ihr Konto endgültig löschen möchten?",
-    "close": "Schließen"
+    "close": "Schließen",
+    "currencyTitle": "Referenzwährung",
+    "currencyHint": "Wählen Sie die Währung, die verwendet wird, wenn Sie einen Referenzwert in Ihrer eigenen Währung eingeben.",
+    "currencySaved": "Referenzwährung aktualisiert",
+    "currencyOtherLabel": "Andere Währung"
   },
   "footer": {
     "personalPage": "Persönliche Seite",
@@ -195,5 +199,12 @@
     "cacheDesc": "Schneller Zugriff auf Mobilgeräten ohne Wartezeit.",
     "kvTitle": "Cloudflare Workers KV",
     "kvDesc": "Globale Edge-Infrastruktur mit sicherem Serverless-Speicher."
+  },
+  "currency": {
+    "listingOption": "Kurswährung ({code})",
+    "personalOption": "Meine Währung ({code})",
+    "convertedHint": "≈ {value} zum heutigen Kurs",
+    "conversionUnavailable": "Wechselkurs nicht verfügbar",
+    "changeMyCurrency": "Meine Währung ändern"
   }
 }

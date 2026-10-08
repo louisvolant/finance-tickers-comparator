@@ -165,7 +165,11 @@
     "deleteAccount": "Eliminar cuenta",
     "deleteWarning": "Elimina permanentemente tu cuenta, tu lista y todos los datos del servidor.",
     "deleteConfirm": "¿Estás seguro de que deseas eliminar permanentemente tu cuenta?",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "currencyTitle": "Moneda de referencia",
+    "currencyHint": "Elige la moneda usada cuando introduces un valor de referencia en tu propia moneda.",
+    "currencySaved": "Moneda de referencia actualizada",
+    "currencyOtherLabel": "Otra moneda"
   },
   "footer": {
     "personalPage": "Página Personal",
@@ -195,5 +199,12 @@
     "cacheDesc": "Abre la app en el móvil y accede al instante sin demoras de red.",
     "kvTitle": "Cloudflare Workers KV",
     "kvDesc": "Infraestructura global serverless de alto rendimiento y seguridad."
+  },
+  "currency": {
+    "listingOption": "Moneda de cotización ({code})",
+    "personalOption": "Mi moneda ({code})",
+    "convertedHint": "≈ {value} al cambio de hoy",
+    "conversionUnavailable": "Tipo de cambio no disponible",
+    "changeMyCurrency": "Cambiar mi moneda"
   }
 }

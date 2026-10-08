@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useI18n } from '@/context/I18nContext';
-import { X, Lock, Trash2, AlertTriangle, Check, Loader2, User, Mail, ShieldAlert } from 'lucide-react';
+import { useCurrencyRates } from '@/context/CurrencyContext';
+import { X, Lock, Trash2, AlertTriangle, Check, Loader2, User, Mail, ShieldAlert, Coins } from 'lucide-react';
+import { ISO_FIAT_CURRENCIES, getCurrencySymbol } from '@/lib/currencies';
 
 interface AccountSettingsModalProps {
   isOpen: boolean;
@@ -13,6 +15,7 @@ interface AccountSettingsModalProps {
 export function AccountSettingsModal({ isOpen, onClose }: AccountSettingsModalProps) {
   const { user, logout } = useAuth();
   const { t } = useI18n();
+  const { preferredCurrency, setPreferredCurrency } = useCurrencyRates();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -21,10 +24,35 @@ export function AccountSettingsModal({ isOpen, onClose }: AccountSettingsModalPr
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
+  const [savingCurrency, setSavingCurrency] = useState(false);
+  const [currencyStatus, setCurrencyStatus] = useState<string | null>(null);
+
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   if (!isOpen || !user) return null;
+
+  const ALL_CURRENCIES = Array.from(ISO_FIAT_CURRENCIES).sort();
+
+  const CURRENCY_QUICK_PICKS = [
+    { code: 'EUR', flag: '🇪🇺' },
+    { code: 'GBP', flag: '🇬🇧' },
+    { code: 'USD', flag: '🇺🇸' },
+    { code: 'CAD', flag: '🇨🇦' },
+    { code: 'AUD', flag: '🇦🇺' },
+  ];
+
+  const handleCurrencyChange = async (code: string) => {
+    if (code === preferredCurrency) return;
+    setSavingCurrency(true);
+    setCurrencyStatus(null);
+    try {
+      await setPreferredCurrency(code);
+      setCurrencyStatus(t('account.currencySaved'));
+    } finally {
+      setSavingCurrency(false);
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,6 +147,58 @@ export function AccountSettingsModal({ isOpen, onClose }: AccountSettingsModalPr
             <Mail className="w-4 h-4 text-slate-500 shrink-0" />
             <span>{user.email}</span>
           </div>
+        </div>
+
+        {/* Reference Currency */}
+        <div className="mt-6">
+          <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <Coins className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{t('account.currencyTitle')}</span>
+          </h3>
+          <p className="text-xs text-slate-400 mb-3 leading-relaxed">{t('account.currencyHint')}</p>
+
+          <div className="flex flex-wrap gap-2 mb-3">
+            {CURRENCY_QUICK_PICKS.map((pick) => (
+              <button
+                key={pick.code}
+                type="button"
+                onClick={() => handleCurrencyChange(pick.code)}
+                disabled={savingCurrency}
+                data-testid={`currency-quick-${pick.code}`}
+                aria-pressed={preferredCurrency === pick.code}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition disabled:opacity-50 cursor-pointer ${
+                  preferredCurrency === pick.code
+                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40'
+                    : 'bg-slate-950/60 text-slate-300 border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <span aria-hidden="true">{pick.flag}</span>
+                <span>{pick.code}</span>
+              </button>
+            ))}
+          </div>
+
+          <label className="block text-[11px] text-slate-500 mb-1">{t('account.currencyOtherLabel')}</label>
+          <select
+            data-testid="preferred-currency-select"
+            value={preferredCurrency}
+            onChange={(e) => handleCurrencyChange(e.target.value)}
+            disabled={savingCurrency}
+            className="w-full px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-emerald-500 disabled:opacity-50 cursor-pointer"
+          >
+            {ALL_CURRENCIES.map((code) => (
+              <option key={code} value={code}>
+                {code} — {getCurrencySymbol(code)}
+              </option>
+            ))}
+          </select>
+
+          {currencyStatus && (
+            <div className="mt-3 p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60 text-xs text-emerald-400 flex items-center gap-2">
+              {savingCurrency ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 shrink-0" />}
+              <span>{currencyStatus}</span>
+            </div>
+          )}
         </div>
 
         {/* Change Password Section */}

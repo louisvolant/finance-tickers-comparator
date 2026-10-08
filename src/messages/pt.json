@@ -165,7 +165,11 @@
     "deleteAccount": "Eliminar conta",
     "deleteWarning": "Elimina permanentemente a sua conta e todos os dados guardados.",
     "deleteConfirm": "Tem a certeza de que deseja eliminar permanentemente a sua conta?",
-    "close": "Fechar"
+    "close": "Fechar",
+    "currencyTitle": "Moeda de referência",
+    "currencyHint": "Escolhe a moeda usada quando introduzes um valor de referência na tua própria moeda.",
+    "currencySaved": "Moeda de referência atualizada",
+    "currencyOtherLabel": "Outra moeda"
   },
   "footer": {
     "personalPage": "Página Pessoal",
@@ -195,5 +199,12 @@
     "cacheDesc": "Acesso rápido no telemóvel sem demoras de ligação à rede.",
     "kvTitle": "Cloudflare Workers KV",
     "kvDesc": "Infraestrutura global de alta velocidade com sessões seguras."
+  },
+  "currency": {
+    "listingOption": "Moeda de cotação ({code})",
+    "personalOption": "A minha moeda ({code})",
+    "convertedHint": "≈ {value} à taxa de hoje",
+    "conversionUnavailable": "Taxa de câmbio indisponível",
+    "changeMyCurrency": "Alterar a minha moeda"
   }
 }

@@ -165,7 +165,11 @@
     "deleteAccount": "Supprimer mon compte",
     "deleteWarning": "Supprime définitivement votre compte, votre liste de tickers et toutes vos données sur le serveur. Cette opération est irréversible.",
     "deleteConfirm": "Êtes-vous certain de vouloir supprimer définitivement votre compte ?",
-    "close": "Fermer"
+    "close": "Fermer",
+    "currencyTitle": "Devise de référence",
+    "currencyHint": "Choisissez la devise utilisée lorsque vous saisissez une valeur de référence dans votre propre devise.",
+    "currencySaved": "Devise de référence mise à jour",
+    "currencyOtherLabel": "Autre devise"
   },
   "footer": {
     "personalPage": "Page Personnelle",
@@ -195,5 +199,12 @@
     "cacheDesc": "Ouvrez l'application sur mobile et visualisez instantanément vos tickers sans attendre le réseau.",
     "kvTitle": "Cloudflare Workers KV",
     "kvDesc": "Architecture distribuée mondialement avec stockage KV sans serveur et sessions hautement sécurisées."
+  },
+  "currency": {
+    "listingOption": "Devise de cotation ({code})",
+    "personalOption": "Ma devise ({code})",
+    "convertedHint": "≈ {value} au taux du jour",
+    "conversionUnavailable": "Taux de change indisponible",
+    "changeMyCurrency": "Changer ma devise"
   }
 }

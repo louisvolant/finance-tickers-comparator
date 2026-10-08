@@ -165,7 +165,11 @@
     "deleteAccount": "Delete Account",
     "deleteWarning": "Permanently deletes your account, personal watchlist, and all cached data from the server. This action cannot be undone.",
     "deleteConfirm": "Are you sure you want to permanently delete your account?",
-    "close": "Close"
+    "close": "Close",
+    "currencyTitle": "Reference Currency",
+    "currencyHint": "Choose the currency used when you enter a reference value in your own currency.",
+    "currencySaved": "Reference currency updated",
+    "currencyOtherLabel": "Other currency"
   },
   "footer": {
     "personalPage": "Personal Page",
@@ -195,5 +199,12 @@
     "cacheDesc": "Launch the app on your phone and immediately see your tickers without waiting for network calls.",
     "kvTitle": "Cloudflare Workers KV",
     "kvDesc": "Global edge architecture with serverless KV storage, secure sessions, and rate-limit shields."
+  },
+  "currency": {
+    "listingOption": "Listing currency ({code})",
+    "personalOption": "My currency ({code})",
+    "convertedHint": "≈ {value} at today’s rate",
+    "conversionUnavailable": "Conversion rate unavailable",
+    "changeMyCurrency": "Change my currency"
   }
 }
