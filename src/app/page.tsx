@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { I18nProvider, useI18n } from '@/context/I18nContext';
+import { CurrencyProvider } from '@/context/CurrencyContext';
 import { Navbar } from './components/Navbar';
 import { AuthModal } from './components/AuthModal';
 import { TickerSearchModal } from './components/TickerSearchModal';
@@ -805,7 +806,9 @@ function Dashboard() {
 export default function HomePage() {
   return (
     <AuthProvider>
-      <Dashboard />
+      <CurrencyProvider>
+        <Dashboard />
+      </CurrencyProvider>
     </AuthProvider>
   );
 }

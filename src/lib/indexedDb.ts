@@ -3,9 +3,16 @@
 import { UserTicker, TickerQuote } from './types';
 
 const DB_NAME = 'ticker_tracker_pwa_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_TICKERS = 'tickers';
 const STORE_QUOTES = 'quotes';
+const STORE_RATES = 'rates';
+
+export interface CachedRatesRecord {
+  base: 'EUR';
+  rates: Record<string, number>;
+  fetchedAt: number;
+}
 
 export const DEFAULT_TICKERS: UserTicker[] = [
   {
@@ -145,6 +152,9 @@ function openDB(): Promise<IDBDatabase | null> {
         }
         if (!db.objectStoreNames.contains(STORE_QUOTES)) {
           db.createObjectStore(STORE_QUOTES, { keyPath: 'symbol' });
+        }
+        if (!db.objectStoreNames.contains(STORE_RATES)) {
+          db.createObjectStore(STORE_RATES, { keyPath: 'base' });
         }
       };
 
@@ -318,4 +328,63 @@ export async function reorderLocalTickers(orderedIds: string[]): Promise<UserTic
 
   await saveLocalTickers(reordered);
   return reordered;
+}
+
+/**
+ * Retrieve the cached EUR-based exchange rates from IndexedDB.
+ */
+export async function getLocalRates(): Promise<CachedRatesRecord | null> {
+  if (typeof window !== 'undefined') {
+    try {
+      const local = localStorage.getItem('tt_cached_rates');
+      if (local) {
+        const parsed = JSON.parse(local) as CachedRatesRecord;
+        if (parsed && parsed.rates && Object.keys(parsed.rates).length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+  }
+
+  const db = await openDB();
+  if (!db) return null;
+
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_RATES, 'readonly');
+      const store = tx.objectStore(STORE_RATES);
+      const req = store.get('EUR');
+
+      req.onsuccess = () => resolve((req.result as CachedRatesRecord) || null);
+      req.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Persist EUR-based exchange rates locally for offline conversion.
+ */
+export async function saveLocalRates(record: CachedRatesRecord): Promise<void> {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('tt_cached_rates', JSON.stringify(record));
+    } catch {}
+  }
+
+  const db = await openDB();
+  if (!db) return;
+
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORE_RATES, 'readwrite');
+      tx.objectStore(STORE_RATES).put(record);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+      tx.onabort = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
 }
