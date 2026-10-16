@@ -30,6 +30,12 @@ export interface TickerQuote {
   extendedChangePercent?: number | null;
 }
 
+/** One regular trading session of a venue, as absolute epoch-millisecond timestamps. */
+export interface MarketSession {
+  opensAt: number;
+  closesAt: number;
+}
+
 export interface UserTicker {
   id: string;
   symbol: string;
