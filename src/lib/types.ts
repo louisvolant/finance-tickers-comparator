@@ -28,6 +28,10 @@ export interface TickerQuote {
   extendedType?: 'pre' | 'post' | null;
   extendedPrice?: number | null;
   extendedChangePercent?: number | null;
+  /** IANA timezone of the venue, e.g. Europe/Paris. */
+  exchangeTimezone?: string | null;
+  /** Upcoming regular sessions (absolute times). Null when no calendar is known. */
+  marketSessions?: MarketSession[] | null;
 }
 
 /** One regular trading session of a venue, as absolute epoch-millisecond timestamps. */

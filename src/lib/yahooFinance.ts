@@ -1,6 +1,7 @@
 import YahooFinance from 'yahoo-finance2';
 import { kvGet, kvPut } from './kv';
 import { normalizeCurrency } from './currencies';
+import { buildMarketSessions } from './marketCalendar';
 import { TickerQuote, TickerSearchResult, ChartPoint, TickerDetails, ForwardConsensusData, EarningsEstimatePeriod } from './types';
 
 /**
@@ -54,6 +55,12 @@ function normalizeQuote(raw: any, symbolOverride?: string): TickerQuote {
   // Normalize Yahoo minor units (pence "GBp", cents "ZAc", "ILA") into their
   // major ISO currency so prices, EPS and reference-value conversions line up.
   const { code: currency, factor } = normalizeCurrency(raw.currency || 'USD');
+
+  // Futures trade almost around the clock, so no session badge is computed for them.
+  const quoteTypeValue = raw.quoteType || 'EQUITY';
+  const exchangeTimezone: string | null = raw.exchangeTimezoneName || null;
+  const marketSessions =
+    quoteTypeValue === 'FUTURE' ? null : buildMarketSessions(exchangeTimezone, Date.now());
 
   const price = (raw.regularMarketPrice ?? 0) / factor;
   const epsForwardRaw = raw.epsForward !== undefined && raw.epsForward !== null ? Number(raw.epsForward) / factor : null;
@@ -127,7 +134,9 @@ function normalizeQuote(raw: any, symbolOverride?: string): TickerQuote {
     volume: raw.regularMarketVolume ?? null,
     avgVolume: raw.averageDailyVolume3Month ?? null,
     exchange: raw.exchange || raw.fullExchangeName || '',
-    quoteType: raw.quoteType || 'EQUITY',
+    quoteType: quoteTypeValue,
+    exchangeTimezone,
+    marketSessions,
     updatedAt: Date.now(),
     marketState,
     preMarketPrice: prePrice ? Number(prePrice.toFixed(4)) : null,
@@ -172,6 +181,8 @@ async function fetchChartDirect(symbol: string): Promise<any | null> {
       regularMarketChangePercent: changePercent,
       currency: meta.currency || 'USD',
       exchange: meta.exchangeName || '',
+      exchangeTimezoneName: meta.exchangeTimezoneName,
+      quoteType: meta.instrumentType,
       fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh,
       fiftyTwoWeekLow: meta.fiftyTwoWeekLow,
       regularMarketVolume: meta.regularMarketVolume,
@@ -226,6 +237,7 @@ async function fetchQuoteWithClient(
         regularMarketChangePercent: qs.price.regularMarketChangePercent,
         currency: qs.price.currency,
         exchange: qs.price.exchangeName,
+        quoteType: qs.price.quoteType,
         marketCap: qs.price.marketCap || qs.summaryDetail?.marketCap,
         trailingPE: qs.summaryDetail?.trailingPE,
         forwardPE: qs.summaryDetail?.forwardPE || qs.defaultKeyStatistics?.forwardPE,
