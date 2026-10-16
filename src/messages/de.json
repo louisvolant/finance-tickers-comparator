@@ -206,5 +206,15 @@
     "convertedHint": "≈ {value} zum heutigen Kurs",
     "conversionUnavailable": "Wechselkurs nicht verfügbar",
     "changeMyCurrency": "Meine Währung ändern"
+  },
+  "marketStatus": {
+    "open": "Geöffnet · schließt um {time}",
+    "justClosed": "Geschlossen seit {min} Min.",
+    "opensSoon": "Öffnet in {min} Min.",
+    "opensToday": "Öffnet heute um {time}",
+    "opensTomorrow": "Öffnet morgen um {time}",
+    "opensOn": "Öffnet {day} um {time}",
+    "closed": "Geschlossen",
+    "tooltip": "Ortszeit der Börse: {zone}"
   }
 }

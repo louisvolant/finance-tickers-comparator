@@ -7,6 +7,7 @@ import { formatCurrency, formatPercent, formatMultiple, getExtendedSessionBadgeC
 import { resolveTracking } from '@/lib/tracking';
 import { useI18n } from '@/context/I18nContext';
 import { useCurrencyRates } from '@/context/CurrencyContext';
+import { MarketStatusBadge } from './MarketStatusBadge';
 
 interface TickerCardProps {
   ticker: UserTicker;
@@ -93,6 +94,8 @@ export function TickerCard({
           <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700/50">
             {quote?.exchange || 'Stock'}
           </span>
+
+          <MarketStatusBadge quote={quote} />
 
           {/* Current PE on line 2 */}
           {quote?.trailingPE ? (

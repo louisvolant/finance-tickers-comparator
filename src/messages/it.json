@@ -206,5 +206,15 @@
     "convertedHint": "≈ {value} al cambio di oggi",
     "conversionUnavailable": "Tasso di cambio non disponibile",
     "changeMyCurrency": "Cambia la mia valuta"
+  },
+  "marketStatus": {
+    "open": "Aperto · chiude alle {time}",
+    "justClosed": "Chiuso da {min} min",
+    "opensSoon": "Apre tra {min} min",
+    "opensToday": "Apre oggi alle {time}",
+    "opensTomorrow": "Apre domani alle {time}",
+    "opensOn": "Apre {day} alle {time}",
+    "closed": "Chiuso",
+    "tooltip": "Ora locale della borsa: {zone}"
   }
 }

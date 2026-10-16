@@ -39,6 +39,7 @@ import { useI18n } from '@/context/I18nContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCurrencyRates } from '@/context/CurrencyContext';
 import { EditTrackingModal } from './EditTrackingModal';
+import { MarketStatusBadge } from './MarketStatusBadge';
 
 type TimeRange = '1d' | '5d' | '1mo' | '6mo' | '1y' | '5y';
 
@@ -282,6 +283,8 @@ export function TickerDetailsPage({ symbol }: { symbol: string }) {
                 <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700/60">
                   {quote?.exchange || 'Stock'}
                 </span>
+                <MarketStatusBadge quote={quote} />
+
                 <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800/60 text-slate-400 uppercase">
                   {quote?.quoteType || 'Equity'}
                 </span>

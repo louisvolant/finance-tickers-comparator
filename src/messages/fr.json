@@ -206,5 +206,15 @@
     "convertedHint": "≈ {value} au taux du jour",
     "conversionUnavailable": "Taux de change indisponible",
     "changeMyCurrency": "Changer ma devise"
+  },
+  "marketStatus": {
+    "open": "Ouvert · ferme à {time}",
+    "justClosed": "Fermé depuis {min} min",
+    "opensSoon": "Ouvre dans {min} min",
+    "opensToday": "Ouvre aujourd’hui à {time}",
+    "opensTomorrow": "Ouvre demain à {time}",
+    "opensOn": "Ouvre {day} à {time}",
+    "closed": "Fermé",
+    "tooltip": "Heure locale de la place : {zone}"
   }
 }

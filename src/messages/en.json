@@ -206,5 +206,15 @@
     "convertedHint": "≈ {value} at today’s rate",
     "conversionUnavailable": "Conversion rate unavailable",
     "changeMyCurrency": "Change my currency"
+  },
+  "marketStatus": {
+    "open": "Open · closes at {time}",
+    "justClosed": "Closed {min} min ago",
+    "opensSoon": "Opens in {min} min",
+    "opensToday": "Opens today at {time}",
+    "opensTomorrow": "Opens tomorrow at {time}",
+    "opensOn": "Opens {day} at {time}",
+    "closed": "Closed",
+    "tooltip": "Local exchange time: {zone}"
   }
 }
