@@ -48,7 +48,9 @@
     "fwdPe": "KGV fwd.",
     "preMarket": "Vorbörslich",
     "afterHours": "Nachbörslich",
-    "extendedSession": "Erweiterte Handelszeit"
+    "extendedSession": "Erweiterte Handelszeit",
+    "filterLabel": "Nach Markt filtern",
+    "filterAll": "Alle Märkte"
   },
   "search": {
     "title": "Ticker hinzufügen",

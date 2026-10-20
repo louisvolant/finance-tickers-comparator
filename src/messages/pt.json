@@ -48,7 +48,9 @@
     "fwdPe": "P/L fwd.",
     "preMarket": "Pré-mercado",
     "afterHours": "Pós-mercado",
-    "extendedSession": "Sessão estendida"
+    "extendedSession": "Sessão estendida",
+    "filterLabel": "Filtrar por mercado",
+    "filterAll": "Todos os mercados"
   },
   "search": {
     "title": "Adicionar ticker",

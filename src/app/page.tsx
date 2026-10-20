@@ -14,7 +14,13 @@ import { Footer } from './components/Footer';
 import { TickerRow } from './components/TickerRow';
 import { TickerCard } from './components/TickerCard';
 import { DisplayModeSelector } from './components/DisplayModeSelector';
-import { DisplayMode, groupTickersByExchange } from '@/lib/displayModes';
+import { MarketFilterBar } from './components/MarketFilterBar';
+import {
+  DisplayMode,
+  filterTickersByExchange,
+  getExchangeFilters,
+  groupTickersByExchange,
+} from '@/lib/displayModes';
 import { MOVED_TICKER_STORAGE_KEY } from '@/lib/utils';
 import {
   getLocalTickers,
@@ -49,6 +55,7 @@ function Dashboard() {
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [editingTicker, setEditingTicker] = useState<UserTicker | null>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('custom');
+  const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
   const [flash, setFlash] = useState<{ id: string; key: number } | null>(null);
   const flashFor = (id: string) => (flash && flash.id === id ? flash.key : undefined);
 
@@ -90,19 +97,32 @@ function Dashboard() {
     } catch {}
   };
 
+  // Chips are derived from the current watchlist, so drop stale selections
+  // when the last ticker of a market is removed.
+  const activeExchanges = useMemo(() => {
+    const available = new Set(getExchangeFilters(tickers).map((exchange) => exchange.id));
+    return selectedExchanges.filter((id) => available.has(id));
+  }, [tickers, selectedExchanges]);
+
+  const visibleTickers = useMemo(
+    () => filterTickersByExchange(tickers, activeExchanges),
+    [tickers, activeExchanges]
+  );
+  const visibleTickerIds = useMemo(() => visibleTickers.map((ticker) => ticker.id), [visibleTickers]);
+
   const displayedTickers = useMemo(() => {
     if (displayMode === 'alphabetical') {
-      return [...tickers].sort((a, b) => a.symbol.localeCompare(b.symbol));
+      return [...visibleTickers].sort((a, b) => a.symbol.localeCompare(b.symbol));
     }
-    return tickers;
-  }, [tickers, displayMode]);
+    return visibleTickers;
+  }, [visibleTickers, displayMode]);
 
   const exchangeGroups = useMemo(() => {
     if (displayMode === 'by_exchange') {
-      return groupTickersByExchange(tickers);
+      return groupTickersByExchange(visibleTickers);
     }
     return [];
-  }, [tickers, displayMode]);
+  }, [visibleTickers, displayMode]);
 
   // Online / offline detector
   useEffect(() => {
@@ -223,13 +243,32 @@ function Dashboard() {
 
   /**
    * Reorder Handlers
+   *
+   * `visibleIds` lets the filtered watchlist reorder against its nearest visible
+   * neighbour, so arrows still produce a visible move when a market filter hides
+   * some rows. Without a filter, the neighbour is simply the adjacent ticker.
    */
-  const handleMove = async (index: number, direction: 'up' | 'down') => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+  const handleMove = async (
+    tickerId: string,
+    direction: 'up' | 'down',
+    visibleIds?: string[]
+  ) => {
+    const currentIndex = tickers.findIndex((ticker) => ticker.id === tickerId);
+    if (currentIndex === -1) return;
+
+    let targetIndex: number;
+    if (visibleIds && visibleIds.length < tickers.length) {
+      const position = visibleIds.indexOf(tickerId);
+      const neighbourId = visibleIds[direction === 'up' ? position - 1 : position + 1];
+      if (!neighbourId) return;
+      targetIndex = tickers.findIndex((ticker) => ticker.id === neighbourId);
+    } else {
+      targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    }
     if (targetIndex < 0 || targetIndex >= tickers.length) return;
 
     const newOrder = [...tickers];
-    const [moved] = newOrder.splice(index, 1);
+    const [moved] = newOrder.splice(currentIndex, 1);
     newOrder.splice(targetIndex, 0, moved);
 
     // Optimistic UI update
@@ -490,6 +529,13 @@ function Dashboard() {
           </button>
         </div>
 
+        {/* Market filters, directly below the search bar on desktop and mobile */}
+        <MarketFilterBar
+          tickers={tickers}
+          selectedExchanges={activeExchanges}
+          onChange={setSelectedExchanges}
+        />
+
         {/* Main Content: Desktop Table & Mobile Cards */}
         {tickers.length > 0 ? (
           <div>
@@ -641,15 +687,15 @@ function Dashboard() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/40 text-sm">
-                      {tickers.map((ticker, idx) => (
+                      {visibleTickers.map((ticker, idx) => (
                         <TickerRow
                           key={ticker.id}
                           ticker={ticker}
                           index={idx}
-                          totalCount={tickers.length}
+                          totalCount={visibleTickers.length}
                           flashKey={flashFor(ticker.id)}
-                          onMoveUp={() => handleMove(idx, 'up')}
-                          onMoveDown={() => handleMove(idx, 'down')}
+                          onMoveUp={() => handleMove(ticker.id, 'up', visibleTickerIds)}
+                          onMoveDown={() => handleMove(ticker.id, 'down', visibleTickerIds)}
                           onClick={openTickerDetails}
                           onEdit={(t) => setEditingTicker(t)}
                           onDelete={(t) => handleDeleteTicker(t)}
@@ -678,16 +724,16 @@ function Dashboard() {
 
                 {/* Mobile Cards View (< 768px) with Up/Down Buttons in Reorder Mode */}
                 <div className="md:hidden space-y-2.5">
-                  {tickers.map((ticker, idx) => (
+                  {visibleTickers.map((ticker, idx) => (
                     <TickerCard
                       key={ticker.id}
                       ticker={ticker}
                       index={idx}
-                      totalCount={tickers.length}
+                      totalCount={visibleTickers.length}
                       isReorderMode={displayMode === 'reorder'}
                       flashKey={flashFor(ticker.id)}
-                      onMoveUp={() => handleMove(idx, 'up')}
-                      onMoveDown={() => handleMove(idx, 'down')}
+                      onMoveUp={() => handleMove(ticker.id, 'up', visibleTickerIds)}
+                      onMoveDown={() => handleMove(ticker.id, 'down', visibleTickerIds)}
                       onClick={openTickerDetails}
                       onEdit={(t) => setEditingTicker(t)}
                       onDelete={(t) => handleDeleteTicker(t)}

@@ -17,6 +17,9 @@ export interface ExchangeGroup {
   tickers: UserTicker[];
 }
 
+/** Hub display order shared by the grouped view and the market filter chips. */
+export const EXCHANGE_PRIORITY = ['PARIS', 'NASDAQ', 'NYSE', 'XETRA', 'AMS', 'BRU', 'LSE', 'SWISS'];
+
 /**
  * Determine the trading system / exchange category for any equity or ETF ticker
  */
@@ -175,15 +178,47 @@ export function groupTickersByExchange(tickers: UserTicker[]): ExchangeGroup[] {
     group.tickers.sort((a, b) => a.symbol.localeCompare(b.symbol));
   }
 
-  // Hub priority ordering: Paris, NASDAQ, NYSE, XETRA, Amsterdam, London, Swiss, Other
-  const priority = ['PARIS', 'NASDAQ', 'NYSE', 'XETRA', 'AMS', 'BRU', 'LSE', 'SWISS'];
+  return Array.from(groupsMap.values()).sort(compareExchanges);
+}
 
-  return Array.from(groupsMap.values()).sort((a, b) => {
-    const idxA = priority.indexOf(a.id);
-    const idxB = priority.indexOf(b.id);
-    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-    if (idxA !== -1) return -1;
-    if (idxB !== -1) return 1;
-    return a.name.localeCompare(b.name);
-  });
+/** Sort exchanges by hub priority, then alphabetically for unknown venues. */
+function compareExchanges(
+  a: Pick<ExchangeInfo, 'id' | 'name'>,
+  b: Pick<ExchangeInfo, 'id' | 'name'>
+): number {
+  const idxA = EXCHANGE_PRIORITY.indexOf(a.id);
+  const idxB = EXCHANGE_PRIORITY.indexOf(b.id);
+  if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+  if (idxA !== -1) return -1;
+  if (idxB !== -1) return 1;
+  return a.name.localeCompare(b.name);
+}
+
+/**
+ * Markets actually represented in the watchlist, de-duplicated and ordered by
+ * hub priority. Used to build the market filter chips below the search bar.
+ */
+export function getExchangeFilters(tickers: UserTicker[]): ExchangeInfo[] {
+  const exchanges = new Map<string, ExchangeInfo>();
+
+  for (const ticker of tickers) {
+    const info = getExchangeInfo(ticker);
+    if (!exchanges.has(info.id)) exchanges.set(info.id, info);
+  }
+
+  return Array.from(exchanges.values()).sort(compareExchanges);
+}
+
+/**
+ * Keep tickers listed on any of the selected exchanges. An empty selection
+ * means "all markets", so the original list is returned unchanged.
+ */
+export function filterTickersByExchange(
+  tickers: UserTicker[],
+  exchangeIds: string[]
+): UserTicker[] {
+  if (exchangeIds.length === 0) return tickers;
+
+  const selected = new Set(exchangeIds);
+  return tickers.filter((ticker) => selected.has(getExchangeInfo(ticker).id));
 }

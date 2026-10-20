@@ -1,6 +1,11 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { getExchangeInfo, groupTickersByExchange } from '../src/lib/displayModes';
+import {
+  filterTickersByExchange,
+  getExchangeInfo,
+  getExchangeFilters,
+  groupTickersByExchange,
+} from '../src/lib/displayModes';
 import { UserTicker } from '../src/lib/types';
 
 describe('Display Modes & Exchange Grouping', () => {
@@ -135,5 +140,27 @@ describe('Display Modes & Exchange Grouping', () => {
       'reorder',
     ];
     assert.equal(validModes.includes('reorder'), true);
+  });
+
+  test('should expose unique market filters in hub priority order', () => {
+    const filters = getExchangeFilters(mockTickers);
+    assert.deepEqual(
+      filters.map((filter) => filter.id),
+      ['PARIS', 'NASDAQ', 'XETRA']
+    );
+  });
+
+  test('should filter tickers by one or several markets, empty selection meaning all', () => {
+    assert.deepEqual(filterTickersByExchange(mockTickers, []), mockTickers);
+
+    const paris = filterTickersByExchange(mockTickers, ['PARIS']).map((ticker) => ticker.symbol);
+    assert.deepEqual(paris, ['MC.PA', 'AI.PA']);
+
+    const parisAndNasdaq = filterTickersByExchange(mockTickers, ['PARIS', 'NASDAQ']).map(
+      (ticker) => ticker.symbol
+    );
+    assert.deepEqual(parisAndNasdaq, ['MC.PA', 'AAPL', 'AI.PA', 'MSFT']);
+
+    assert.equal(filterTickersByExchange(mockTickers, ['LSE']).length, 0);
   });
 });
