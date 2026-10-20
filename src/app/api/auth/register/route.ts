@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kvGet, kvPut } from '@/lib/kv';
 import { hashPassword } from '@/lib/authCrypto';
-import { setSessionUser } from '@/lib/session';
+import { createSessionCookie } from '@/lib/session';
 import { UserRecord } from '@/lib/types';
 import { ISO_FIAT_CURRENCIES } from '@/lib/currencies';
+import { getRequestOrigin } from '@/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -56,9 +57,15 @@ export async function POST(request: NextRequest) {
       preferredCurrency: cleanPreferredCurrency,
     };
 
-    await setSessionUser(sessionUser);
+    const session = await createSessionCookie(
+      sessionUser,
+      getRequestOrigin(request).startsWith('https://')
+    );
 
-    return NextResponse.json({ user: sessionUser }, { status: 201 });
+    const response = NextResponse.json({ user: sessionUser }, { status: 201 });
+    response.cookies.set(session.name, session.value, session.options);
+    response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+    return response;
   } catch (err) {
     console.error('Registration error:', err);
     return NextResponse.json({ error: 'Failed to create account' }, { status: 500 });

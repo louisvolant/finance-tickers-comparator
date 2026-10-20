@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kvGet } from '@/lib/kv';
 import { verifyPassword } from '@/lib/authCrypto';
-import { setSessionUser } from '@/lib/session';
+import { createSessionCookie } from '@/lib/session';
 import { UserRecord } from '@/lib/types';
+import { getRequestOrigin } from '@/lib/env';
 
 export const runtime = 'nodejs';
 
@@ -33,9 +34,15 @@ export async function POST(request: NextRequest) {
       preferredCurrency: user.preferredCurrency,
     };
 
-    await setSessionUser(sessionUser);
+    const session = await createSessionCookie(
+      sessionUser,
+      getRequestOrigin(request).startsWith('https://')
+    );
 
-    return NextResponse.json({ user: sessionUser });
+    const response = NextResponse.json({ user: sessionUser });
+    response.cookies.set(session.name, session.value, session.options);
+    response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+    return response;
   } catch (err) {
     console.error('Login error:', err);
     return NextResponse.json({ error: 'Failed to sign in' }, { status: 500 });

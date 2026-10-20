@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { kvGet, kvPut } from '@/lib/kv';
-import { setSessionUser } from '@/lib/session';
+import { createSessionCookie } from '@/lib/session';
 import { UserRecord } from '@/lib/types';
 
 import { getEnvVar, getRequestOrigin } from '@/lib/env';
 
 export const runtime = 'nodejs';
+
+/**
+ * Redirect responses must never be cached: the successful callback carries the
+ * session `Set-Cookie` header, and a shared cache replaying it would hand the
+ * same session to another visitor. 303 is also the correct status after an
+ * OAuth callback, so browsers follow it with a plain GET.
+ */
+function redirectTo(url: string): NextResponse {
+  const response = NextResponse.redirect(url, 303);
+  response.headers.set('Cache-Control', 'private, no-store, max-age=0, must-revalidate');
+  return response;
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -14,14 +26,14 @@ export async function GET(request: NextRequest) {
   const redirectUri = `${origin}/api/auth/callback/google`;
 
   if (!code) {
-    return NextResponse.redirect(`${origin}?auth_error=missing_code`);
+    return redirectTo(`${origin}?auth_error=missing_code`);
   }
 
   const clientId = getEnvVar('GOOGLE_CLIENT_ID');
   const clientSecret = getEnvVar('GOOGLE_CLIENT_SECRET');
 
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(`${origin}?auth_error=google_credentials_missing`);
+    return redirectTo(`${origin}?auth_error=google_credentials_missing`);
   }
 
   try {
@@ -40,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     if (!tokenRes.ok) {
       console.error('Google token exchange error:', await tokenRes.text());
-      return NextResponse.redirect(`${origin}?auth_error=token_exchange_failed`);
+      return redirectTo(`${origin}?auth_error=token_exchange_failed`);
     }
 
     const { access_token } = (await tokenRes.json()) as { access_token: string };
@@ -51,7 +63,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!userRes.ok) {
-      return NextResponse.redirect(`${origin}?auth_error=userinfo_failed`);
+      return redirectTo(`${origin}?auth_error=userinfo_failed`);
     }
 
     const profile = (await userRes.json()) as { id: string; email: string; name?: string };
@@ -77,17 +89,22 @@ export async function GET(request: NextRequest) {
       await kvPut(`user:by-id:${user.id}`, user);
     }
 
-    // 4. Set session cookie
-    await setSessionUser({
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      preferredCurrency: user.preferredCurrency,
-    });
+    // 4. Build the session cookie and attach it to the redirect itself.
+    const session = await createSessionCookie(
+      {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        preferredCurrency: user.preferredCurrency,
+      },
+      origin.startsWith('https://')
+    );
 
-    return NextResponse.redirect(`${origin}?auth_success=true`);
+    const response = redirectTo(`${origin}?auth_success=true`);
+    response.cookies.set(session.name, session.value, session.options);
+    return response;
   } catch (err) {
     console.error('Google auth callback error:', err);
-    return NextResponse.redirect(`${origin}?auth_error=oauth_internal_error`);
+    return redirectTo(`${origin}?auth_error=oauth_internal_error`);
   }
 }
