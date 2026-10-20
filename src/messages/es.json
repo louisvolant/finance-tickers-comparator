@@ -12,7 +12,6 @@
     "signUp": "Crear cuenta",
     "signOut": "Cerrar sesión",
     "settings": "Ajustes de cuenta",
-    "searchPrompt": "Buscar acciones (⌘K)",
     "livePE": "PER en vivo"
   },
   "hero": {
@@ -50,7 +49,13 @@
     "afterHours": "Posmercado",
     "extendedSession": "Sesión extendida",
     "filterLabel": "Filtrar por mercado",
-    "filterAll": "Todos los mercados"
+    "filterAll": "Todos los mercados",
+    "searchLabel": "Buscar en mi lista",
+    "searchPlaceholder": "Buscar en mi lista (⌘K)",
+    "clearSearch": "Borrar búsqueda",
+    "noResultsTitle": "Ningún ticker coincide con tu búsqueda",
+    "noResultsBody": "Prueba otro símbolo o nombre de empresa, o restablece los filtros.",
+    "resetFilters": "Restablecer filtros"
   },
   "search": {
     "title": "Añadir ticker",

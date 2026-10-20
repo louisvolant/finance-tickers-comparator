@@ -22,6 +22,7 @@ import {
   groupTickersByExchange,
 } from '@/lib/displayModes';
 import { MOVED_TICKER_STORAGE_KEY } from '@/lib/utils';
+import { filterTickersByQuery } from '@/lib/watchlistSearch';
 import {
   getLocalTickers,
   saveLocalTickers,
@@ -42,6 +43,7 @@ import {
   Zap,
   ArrowUpDown,
   Smartphone,
+  X,
 } from 'lucide-react';
 
 function Dashboard() {
@@ -56,6 +58,8 @@ function Dashboard() {
   const [editingTicker, setEditingTicker] = useState<UserTicker | null>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('custom');
   const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
+  const [watchlistQuery, setWatchlistQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [flash, setFlash] = useState<{ id: string; key: number } | null>(null);
   const flashFor = (id: string) => (flash && flash.id === id ? flash.key : undefined);
 
@@ -104,9 +108,14 @@ function Dashboard() {
     return selectedExchanges.filter((id) => available.has(id));
   }, [tickers, selectedExchanges]);
 
+  // Market chips and the live search box combine before any display mode runs.
   const visibleTickers = useMemo(
-    () => filterTickersByExchange(tickers, activeExchanges),
-    [tickers, activeExchanges]
+    () =>
+      filterTickersByQuery(
+        filterTickersByExchange(tickers, activeExchanges),
+        watchlistQuery
+      ),
+    [tickers, activeExchanges, watchlistQuery]
   );
   const visibleTickerIds = useMemo(() => visibleTickers.map((ticker) => ticker.id), [visibleTickers]);
 
@@ -139,17 +148,19 @@ function Dashboard() {
     }
   }, []);
 
-  // Keyboard shortcut (⌘K or Ctrl+K to open search)
+  // Keyboard shortcut (⌘K or Ctrl+K focuses the watchlist search field)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (searchModalOpen) return;
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setSearchModalOpen(true);
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [searchModalOpen]);
 
   /**
    * 1. Instant Startup: Load cached tickers & quotes from IndexedDB first
@@ -496,19 +507,48 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Quick Search Bar & Refresh Row */}
+        {/* Watchlist Search, Add Ticker & Refresh Row */}
         <div className="flex items-center justify-between gap-3 mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div role="search" className="relative flex-1 min-w-0 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                inputMode="search"
+                value={watchlistQuery}
+                onChange={(e) => setWatchlistQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setWatchlistQuery('');
+                    e.currentTarget.blur();
+                  }
+                }}
+                placeholder={t('watchlist.searchPlaceholder')}
+                aria-label={t('watchlist.searchLabel')}
+                data-testid="watchlist-search-input"
+                className="w-full pl-8 pr-8 py-2 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30 outline-none text-slate-200 placeholder:text-slate-500 text-xs transition"
+              />
+              {watchlistQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWatchlistQuery('');
+                    searchInputRef.current?.focus();
+                  }}
+                  title={t('watchlist.clearSearch')}
+                  aria-label={t('watchlist.clearSearch')}
+                  data-testid="watchlist-search-clear"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-slate-500 hover:text-white transition cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setSearchModalOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 text-xs transition cursor-pointer"
-            >
-              <Search className="w-3.5 h-3.5" />
-              <span>{t('nav.searchPrompt')}</span>
-            </button>
-            <button
-              onClick={() => setSearchModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-md shadow-emerald-500/20 cursor-pointer"
+              title={t('nav.addTicker')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-md shadow-emerald-500/20 cursor-pointer shrink-0"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span className="hidden sm:inline">{t('nav.addTicker')}</span>
@@ -536,8 +576,36 @@ function Dashboard() {
           onChange={setSelectedExchanges}
         />
 
+        {/* Shown when the live search or the market chips hide every ticker */}
+        {tickers.length > 0 && visibleTickers.length === 0 && (
+          <div
+            data-testid="watchlist-no-results"
+            className="text-center py-12 px-4 rounded-2xl bg-slate-900/40 border border-slate-800"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
+              <Search className="w-6 h-6 text-emerald-400" />
+            </div>
+            <h3 className="text-base font-bold text-white">{t('watchlist.noResultsTitle')}</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
+              {t('watchlist.noResultsBody')}
+            </p>
+            <button
+              onClick={() => {
+                setWatchlistQuery('');
+                setSelectedExchanges([]);
+                searchInputRef.current?.focus();
+              }}
+              data-testid="watchlist-reset-filters"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-bold text-xs border border-slate-700 transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+              <span>{t('watchlist.resetFilters')}</span>
+            </button>
+          </div>
+        )}
+
         {/* Main Content: Desktop Table & Mobile Cards */}
-        {tickers.length > 0 ? (
+        {tickers.length > 0 && visibleTickers.length > 0 ? (
           <div>
             {displayMode === 'by_exchange' ? (
               /* Grouped by Trading Exchange (PARIS, NASDAQ, NYSE, etc.) */
@@ -763,7 +831,7 @@ function Dashboard() {
               </p>
             </div>
           </div>
-        ) : (
+        ) : tickers.length === 0 ? (
           /* Empty State */
           <div className="text-center py-16 px-4 rounded-2xl bg-slate-900/40 border border-slate-800">
             <div className="w-12 h-12 rounded-2xl bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-3">
@@ -790,7 +858,7 @@ function Dashboard() {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Feature Highlights Grid */}
         <section className="mt-12 pt-8 border-t border-slate-800/80">

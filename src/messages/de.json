@@ -12,7 +12,6 @@
     "signUp": "Konto erstellen",
     "signOut": "Abmelden",
     "settings": "Kontoeinstellungen",
-    "searchPrompt": "Aktien suchen (⌘K)",
     "livePE": "Live KGV"
   },
   "hero": {
@@ -50,7 +49,13 @@
     "afterHours": "Nachbörslich",
     "extendedSession": "Erweiterte Handelszeit",
     "filterLabel": "Nach Markt filtern",
-    "filterAll": "Alle Märkte"
+    "filterAll": "Alle Märkte",
+    "searchLabel": "Meine Watchlist durchsuchen",
+    "searchPlaceholder": "Meine Watchlist durchsuchen (⌘K)",
+    "clearSearch": "Suche löschen",
+    "noResultsTitle": "Keine Ticker passen zu Ihrer Suche",
+    "noResultsBody": "Versuchen Sie ein anderes Symbol oder einen anderen Firmennamen oder setzen Sie die Filter zurück.",
+    "resetFilters": "Filter zurücksetzen"
   },
   "search": {
     "title": "Ticker hinzufügen",

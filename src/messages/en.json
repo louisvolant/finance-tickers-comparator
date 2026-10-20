@@ -12,7 +12,6 @@
     "signUp": "Create Account",
     "signOut": "Sign Out",
     "settings": "Account Settings",
-    "searchPrompt": "Search stocks (⌘K)",
     "livePE": "Live PE"
   },
   "hero": {
@@ -50,7 +49,13 @@
     "afterHours": "After-Hours",
     "extendedSession": "Extended Session",
     "filterLabel": "Filter by market",
-    "filterAll": "All markets"
+    "filterAll": "All markets",
+    "searchLabel": "Search my watchlist",
+    "searchPlaceholder": "Search my watchlist (⌘K)",
+    "clearSearch": "Clear search",
+    "noResultsTitle": "No tickers match your search",
+    "noResultsBody": "Try another symbol or company name, or reset the filters.",
+    "resetFilters": "Reset filters"
   },
   "search": {
     "title": "Add Stock Ticker",
