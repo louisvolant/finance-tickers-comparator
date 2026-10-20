@@ -8,7 +8,10 @@ import { useI18n } from '@/context/I18nContext';
 
 interface MarketFilterBarProps {
   tickers: UserTicker[];
-  /** Selected exchange ids. An empty array means every market is shown. */
+  /**
+   * Selected exchange ids. The filter is exclusive, so there is at most one id;
+   * an empty array means every market is shown.
+   */
   selectedExchanges: string[];
   onChange: (exchangeIds: string[]) => void;
 }
@@ -43,11 +46,13 @@ export function MarketFilterBar({
 
   const allSelected = selectedExchanges.length === 0;
 
-  const toggleExchange = (exchangeId: string) => {
+  const selectExchange = (exchangeId: string) => {
+    // Exclusive filter: picking a market replaces any other one. Clicking the
+    // active chip again clears the filter and shows every market.
     if (selectedExchanges.includes(exchangeId)) {
-      onChange(selectedExchanges.filter((id) => id !== exchangeId));
+      onChange([]);
     } else {
-      onChange([...selectedExchanges, exchangeId]);
+      onChange([exchangeId]);
     }
   };
 
@@ -88,7 +93,7 @@ export function MarketFilterBar({
           <button
             key={exchange.id}
             type="button"
-            onClick={() => toggleExchange(exchange.id)}
+            onClick={() => selectExchange(exchange.id)}
             aria-pressed={isSelected}
             title={exchange.name}
             data-testid={`market-filter-${exchange.id}`}
