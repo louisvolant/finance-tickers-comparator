@@ -18,7 +18,7 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - **Right side**: Current price and daily change (% evolution) with extended session indicators (`🌅` / `🌙`).
   - **Details Modal**: Personal cost basis / target price is streamlined away from collapsed cards into the opened details modal right next to the "Equity" pill.
 - **Pre-Market, After-Hours & Sunday Futures Indicator**: Displays real-time extended session percentage indicators directly beside daily change (e.g. `▼ -0.41% (🌅 +0.03%)` or `(🌙 -0.12%)`). Essential for monitoring after-hours earnings reports, early morning pre-market trading, and Sunday evening futures pre-trends before Monday market open. Drops below **-0.20%** are highlighted in deep red / rose.
-- **Market Status (Open / Just Closed / Opens Soon)**: Mobile cards and the ticker page show whether the venue is open (with its closing time), closed for less than 30 minutes, opening within 60 minutes (with a countdown), or closed until its next session (today, tomorrow or the weekday). Sessions are computed server-side from the venue timezone, weekends and exchange holidays (via `date-holidays`, with per-exchange exceptions), so the clock refreshes every 30 seconds without extra network calls. Futures are not shown: their values are only displayed while they trade.
+- **Market Status (Open / Just Closed / Opens Soon)**: Mobile cards and the ticker page show whether the venue is open (with its closing time), closed for less than 30 minutes, opening within 60 minutes (with a countdown), or closed until its next session (today, tomorrow or the weekday). Sessions are computed server-side from the venue timezone, weekends and exchange holidays; the holiday dates are pre-generated into `marketHolidays.json` so the runtime does no holiday computation and carries no holiday library (see [Market holiday table](#market-holiday-table)). Futures are not shown: their values are only displayed while they trade.
 - **Reliable Reorganization Mode (Flèches Haut / Bas)**: Select "Reorganize" (`Réorganisation`) from the display dropdown to enter ordering mode:
   - The right-hand price block on each mobile card is dynamically replaced with intuitive **Up / Down arrow buttons** (`ChevronUp` / `ChevronDown`).
   - Tapping up/down immediately reorders tickers without any touch gesture conflicts between scrolling, tapping, and long-presses.
@@ -111,8 +111,8 @@ npm start
 
 For Cloudflare Workers build and deployment:
 ```bash
-npm run build
-npm run deploy
+npm run build    # holiday-table check, then OpenNext build
+npm run deploy   # runs the build itself, then wrangler deploy
 ```
 
 ---
@@ -140,6 +140,10 @@ CRON_SECRET="your-cron-secret"
 VAPID_PUBLIC_KEY="your-vapid-public-key"
 VAPID_PRIVATE_KEY="your-vapid-private-key"
 VAPID_SUBJECT="mailto:contact@your-domain.example"
+
+# Optional build-time max age (days) of the generated market-holiday table
+# before `npm run build` regenerates it. Defaults to 30.
+MARKET_HOLIDAYS_MAX_AGE_DAYS="30"
 ```
 
 ### Cloudflare Workers KV & Wrangler Setup
@@ -323,6 +327,38 @@ Platform notes: Chrome, Edge and Firefox work on desktop and Android; Safari req
 Without VAPID keys the scan still runs and arms alerts; only delivery is skipped, so adding the keys later starts notifying without touching stored state.
 
 Covered by `tests/alerts.test.ts` (session spikes, re-arming, first-evaluation arming, FX conversion and missing rates, one-sided configuration).
+
+### Market holiday table
+
+`date-holidays` is no longer a runtime dependency. It is used only by `scripts/generate-market-holidays.ts` (a devDependency) to produce `src/lib/marketHolidays.json`, which is committed:
+
+```json
+{
+  "generatedAt": "2026-10-21",
+  "coverage": { "from": 2026, "to": 2040 },
+  "holidays": {
+    "Europe/Paris": ["2026-01-01", "2026-04-03", "2026-04-06", "2026-05-01", "..."],
+    "America/New_York": ["2026-01-01", "2026-01-19", "2026-02-16", "..."]
+  }
+}
+```
+
+At runtime `marketCalendar.ts` builds one `Set` per venue on first use and does a date lookup. There is no holiday computation, no network call and no KV access. The rules that feed the table (`ignoredHolidays`, `closedOn`, Good Friday, Easter Monday) stay in `MARKET_CALENDARS` and are consumed at generation time.
+
+**Build check.** `npm run build` runs `scripts/ensure-market-holidays.ts` first. It regenerates the table only when:
+
+- `coverage.to` no longer reaches next year, or
+- `generatedAt` is older than `MARKET_HOLIDAYS_MAX_AGE_DAYS` (default `30`).
+
+When regeneration produces identical holiday content, only `generatedAt` is refreshed and the build continues: a timestamp-only change is never a commit requirement. When the content actually changes (new rules, extended coverage), the file is written and a CI build fails so the regenerated table is committed before deploying; a local build only warns. Manual regeneration:
+
+```bash
+npm run generate:market-holidays
+```
+
+Early closes (half-days) and one-off closures (national mourning, weather) are not modelled, as before. Adding a venue means adding it to `MARKET_CALENDARS`, then regenerating.
+
+Removing `date-holidays` also removes `moment`, `moment-timezone`, `astronomia` and `tldts` from the Worker: the bundle dropped from **2.46 MiB to 1.59 MiB gzip** on the current build. Covered by `tests/marketHolidays.test.ts` and the existing `tests/marketCalendar.test.ts`.
 
 ### Verifying the Workers behaviour locally
 

@@ -1,17 +1,23 @@
-// Server-only: relies on date-holidays. Client code reads the resulting sessions
-// from the quote payload and never imports this module.
-import Holidays from 'date-holidays';
+// Server-only: reads the generated market-holiday table. Client code reads the
+// resulting sessions from the quote payload and never imports this module.
+//
+// `MARKET_CALENDARS` still carries the holiday rules (country, ignored holidays,
+// Good Friday, ...), but they are consumed at authoring time by
+// `scripts/generate-market-holidays.ts`. Runtime only does a date lookup, so
+// date-holidays and its moment/astronomia tree are not part of the bundle.
+import marketHolidaysData from './marketHolidays.json';
+import type { MarketHolidaysFile } from './marketHolidays';
 import { MarketSession } from './types';
 
 interface MarketCalendar {
-  /** date-holidays country code whose public holidays drive the closures. */
+  /** date-holidays country code, used only by the holiday generator. */
   country: string;
   /** Regular cash session, local exchange time (HH:MM). */
   open: string;
   close: string;
-  /** Public holidays (English names) on which the venue keeps trading. */
+  /** Public holidays (English names) on which the venue keeps trading. Generator input. */
   ignoredHolidays?: string[];
-  /** Extra venue closures that are not in the country list, as MM-DD. */
+  /** Extra venue closures that are not in the country list, as MM-DD. Generator input. */
   closedOn?: string[];
   goodFriday: boolean;
   easterMonday: boolean;
@@ -158,41 +164,22 @@ export function easterSunday(year: number): Date {
   return new Date(Date.UTC(year, month - 1, day));
 }
 
-const holidayProviders = new Map<string, Holidays>();
+const holidayData = marketHolidaysData as MarketHolidaysFile;
 const closedDaysCache = new Map<string, Set<string>>();
+let coverageWarningYear: number | null = null;
 
-/** Calendar dates (YYYY-MM-DD) on which the venue is closed in a given year. */
-function closedDays(timezone: string, calendar: MarketCalendar, year: number): Set<string> {
-  const cacheKey = `${timezone}:${year}`;
-  const cached = closedDaysCache.get(cacheKey);
+/**
+ * Calendar dates (YYYY-MM-DD) on which the venue is closed.
+ *
+ * A pure lookup over the generated table: no computation, no allocation per
+ * call beyond the first set for each venue.
+ */
+function closedDays(timezone: string): Set<string> {
+  const cached = closedDaysCache.get(timezone);
   if (cached) return cached;
 
-  let provider = holidayProviders.get(calendar.country);
-  if (!provider) {
-    provider = new Holidays(calendar.country, { languages: ['en'] });
-    holidayProviders.set(calendar.country, provider);
-  }
-
-  const closed = new Set<string>();
-  for (const holiday of provider.getHolidays(year)) {
-    if (holiday.type !== 'public') continue;
-    if (calendar.ignoredHolidays?.includes(holiday.name)) continue;
-    closed.add(holiday.date.slice(0, 10));
-  }
-
-  const easter = easterSunday(year);
-  const shift = (days: number) => {
-    const d = new Date(easter.getTime() + days * 86_400_000);
-    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
-  };
-  if (calendar.goodFriday) closed.add(shift(-2));
-  if (calendar.easterMonday) closed.add(shift(1));
-
-  for (const monthDay of calendar.closedOn ?? []) {
-    closed.add(`${year}-${monthDay}`);
-  }
-
-  closedDaysCache.set(cacheKey, closed);
+  const closed = new Set<string>(holidayData.holidays[timezone] ?? []);
+  closedDaysCache.set(timezone, closed);
   return closed;
 }
 
@@ -266,6 +253,16 @@ export function buildMarketSessions(
   const [closeHour, closeMinute] = calendar.close.split(':').map(Number);
   const today = partsAt(nowMs, timezone);
 
+  // The build gate regenerates the table before it can expire; this warning is
+  // the last line of defence if a deployment ships a stale table anyway.
+  if (today.year > holidayData.coverage.to && coverageWarningYear !== today.year) {
+    coverageWarningYear = today.year;
+    console.warn(
+      `Market holiday table covers up to ${holidayData.coverage.to}; ` +
+        'run `npm run generate:market-holidays` and commit the result.'
+    );
+  }
+
   const sessions: MarketSession[] = [];
   // Upper bound on calendar days scanned, so that long closures cannot loop forever.
   for (let offset = 0; sessions.length < tradingDays && offset < 60; offset++) {
@@ -276,7 +273,7 @@ export function buildMarketSessions(
     const year = day.getUTCFullYear();
     const month = day.getUTCMonth() + 1;
     const date = day.getUTCDate();
-    if (closedDays(timezone, calendar, year).has(`${year}-${pad(month)}-${pad(date)}`)) continue;
+    if (closedDays(timezone).has(`${year}-${pad(month)}-${pad(date)}`)) continue;
 
     sessions.push({
       opensAt: zonedWallClockToEpoch(year, month, date, openHour, openMinute, timezone),
