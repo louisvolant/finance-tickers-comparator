@@ -597,3 +597,145 @@ once D1 is confirmed stable.
 4. Which D1 primary location?
 5. How long do we keep the KV user backup (one week? one month?)?
 6. Do we want email verification / password reset next, or keep scope tight?
+
+---
+
+## 16. Phase 6 — SEO, sitemap and crawlability (independent of D1)
+
+This phase has no dependency on the D1 migration and can ship in parallel. Note
+that two of the requested items already exist as generated Next.js routes:
+
+- `src/app/sitemap.ts` → `/sitemap.xml`
+- `src/app/robots.ts` → `/robots.txt`
+
+The work is therefore to **complete and verify** them, not to create them from
+scratch. The current sitemap only contains `/`, `/privacy` and `/terms`; the
+ticker pages are absent, and the metadata is only partially filled.
+
+### 16.1 Sitemap
+
+- [ ] Keep `/`, `/privacy`, `/terms`.
+- [ ] Add public ticker pages from the curated catalog, never from a user's
+      watchlist:
+
+```ts
+import { STOCK_CATALOG } from '@/lib/stockCatalog';
+
+const tickerUrls = STOCK_CATALOG.map((item) => ({
+  url: `${baseUrl}/ticker/${encodeURIComponent(item.symbol)}`,
+  lastModified: new Date(),
+  changeFrequency: 'daily' as const,
+  priority: 0.8,
+}));
+```
+
+- [ ] Never include `/api/`, `/ticker/` pages discovered only from a personal
+      watchlist, or any URL containing a user id.
+- [ ] Use `getSiteUrl()` for the origin (already done) so the domain follows
+      `NEXT_PUBLIC_APP_URL`.
+- [ ] Keep the number of URLs under the 50,000 sitemap limit; if the catalog
+      grows beyond that, split into a sitemap index.
+- [ ] Verify with `curl -s https://tickertracker.net/sitemap.xml` and in Google
+      Search Console.
+
+### 16.2 Robots
+
+- [ ] Explicitly allow the public pages: `/`, `/ticker/`, `/privacy`, `/terms`.
+- [ ] Disallow `/api/` and keep the sitemap reference.
+- [ ] Do not disallow `/ticker/`: the page shell is user-agnostic (personal data
+      is resolved client-side), so it is safe to index.
+- [ ] Verify with `curl -s https://tickertracker.net/robots.txt`.
+
+### 16.3 Metadata
+
+- [ ] Homepage: `alternates.canonical`, `openGraph.url`, `twitter.card` and a
+      populated `openGraph.images`.
+- [ ] Ticker pages: extend `generateMetadata` in
+      `src/app/ticker/[symbol]/page.tsx` with a canonical URL, `openGraph` and
+      `twitter` overrides per symbol.
+- [ ] Add a dedicated **1200×630** social image instead of the 512×512 icon
+      (`public/og-image.png` or a dynamic `opengraph-image.tsx` with
+      `next/og`). Switch `twitter.card` to `summary_large_image`.
+- [ ] Add Google Search Console verification through
+      `metadata.verification.google`, fed by a `GOOGLE_SITE_VERIFICATION`
+      environment variable (never hardcoded).
+- [ ] Keep `metadataBase` on `tickertracker.net` (already done).
+- [ ] Check that every public page has a unique `<title>` and a useful
+      `<meta name="description">`.
+
+### 16.4 Structured data
+
+- [ ] Homepage: `WebSite` + `Organization` JSON-LD (name, url, logo). Do not add
+      a `SearchAction` unless a real query-string search route exists.
+- [ ] Ticker pages: `BreadcrumbList` (Home → Ticker → SYMBOL). Keep the payload
+      public and user-agnostic.
+- [ ] Do not inject prices or personal data into JSON-LD: they change constantly
+      and could conflict with the visible page.
+- [ ] Validate with the Rich Results Test.
+
+### 16.5 Crawlable ticker content
+
+The ticker page is client-personalized: the server shell contains no personal
+data, but the main content is rendered client-side. Google renders JavaScript,
+but other crawlers may only see the shell.
+
+- [ ] Add a public, server-rendered summary (symbol, name, exchange, 52-week
+      range) or a `<noscript>` fallback, without any user data.
+- [ ] Keep the personalized blocks (reference target, notes, alerts) client-only.
+- [ ] Ensure exactly one `<h1>` per page and descriptive link text.
+
+### 16.6 Performance and Core Web Vitals
+
+- [ ] Code-split the chart: `recharts` is imported statically by
+      `TickerDetailsPage`; load the chart component with `next/dynamic` to keep
+      it out of the initial bundle.
+- [ ] Give chart and image containers explicit dimensions to avoid layout shift
+      (CLS).
+- [ ] Keep the quote cache and the 30-second refresh; do not add blocking
+      requests on first paint.
+- [ ] Consider a smaller chart library or a server-rendered sparkline if
+      `recharts` remains the largest client dependency.
+- [ ] Remove `maximumScale: 1` and `userScalable: false` from the viewport
+      config (`src/app/layout.tsx`): preventing zoom hurts accessibility and is
+      penalised by Lighthouse.
+
+### 16.7 PWA manifest
+
+- [ ] Add `id`, `scope`, `lang`, `categories` and, if possible, `screenshots`
+      to `public/manifest.json`.
+- [ ] Keep `start_url: "/"` and the existing icons; add a maskable 512×512 icon
+      if the current one is not safe-zone compliant.
+
+### 16.8 Internationalization
+
+- [ ] The locale is client-side (cookie/localStorage) and there are no
+      `/[locale]` URLs, so `hreflang` is not applicable today. Do not emit
+      misleading `alternates.languages`.
+- [ ] Update `document.documentElement.lang` when the user switches language
+      (accessibility and crawler hints).
+- [ ] If multilingual SEO becomes a goal, introduce localized routes first, then
+      `hreflang`.
+
+### 16.9 Tests and monitoring
+
+- [ ] Unit test `sitemap()` and `robots()`: expected URLs, ticker entries,
+      sitemap reference, `/api/` disallow.
+- [ ] E2E test the rendered `<head>`: canonical, `og:title`, `og:image`,
+      `twitter:card`, JSON-LD, and the `/robots.txt` + `/sitemap.xml` responses.
+- [ ] Submit the sitemap in Google Search Console and Bing Webmaster Tools.
+- [ ] Check the PageSpeed Insights / Lighthouse SEO and accessibility scores
+      after deployment.
+- [ ] Re-run the checks after the D1 migration (no URL or header regressions).
+
+### 16.10 Definition of done
+
+- [ ] `/sitemap.xml` lists the public pages and the curated ticker pages.
+- [ ] `/robots.txt` allows public pages, disallows `/api/`, references the
+      sitemap.
+- [ ] Every public page has a canonical, a unique title/description and OG/Twitter
+      metadata.
+- [ ] Homepage and ticker pages expose valid JSON-LD.
+- [ ] The ticker page has a crawlable public summary.
+- [ ] Lighthouse SEO ≥ 95, accessibility ≥ 90 on mobile.
+- [ ] Search Console shows the sitemap as processed without errors.
+
