@@ -1,8 +1,13 @@
 name = "ticker-tracker"
-main = ".open-next/worker.js"
+main = "custom-worker.ts"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 keep_vars = true
+
+# Runs every five minutes. The handler filters venues that are closed, so a
+# 24/7 trigger costs no upstream call outside market hours.
+[triggers]
+crons = ["*/5 * * * *"]
 
 [assets]
 directory = ".open-next/assets"

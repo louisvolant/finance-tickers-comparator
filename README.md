@@ -131,6 +131,10 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
 # Optional explicit public application URL (e.g. for OAuth redirects behind reverse proxies)
 NEXT_PUBLIC_APP_URL="https://ticker-tracker.yourdomain.com"
+
+# Shared secret for the scheduled price-alert scan (openssl rand -hex 32).
+# Also used by the scheduled handler, so it must be available in the Worker env.
+CRON_SECRET="your-cron-secret"
 ```
 
 ### Cloudflare Workers KV & Wrangler Setup
@@ -254,6 +258,35 @@ Thresholds and arming state live in two different KV keys on purpose. `user:tick
 
 The panel is rendered by `PriceAlertsSection` on `/ticker/[symbol]` and covers three states: guest (*sign in*), authenticated but not watching the symbol (*add it first*) and enabled (*edit / disable*). Covered by `e2e/price-alerts.spec.ts`.
 
+### Scheduled scan
+
+`runAlertScan()` (`src/lib/alertScan.ts`) is exposed as `POST /api/cron/alerts` (also `GET` for manual runs). The endpoint fails closed: it returns `503` when `CRON_SECRET` is missing and `401` on a wrong or absent `Authorization: Bearer …` header. It never returns symbols or user ids, only counters.
+
+What one scan does:
+
+1. Lists `user:tickers:*`, keeps the entries that opted into alerts and whose venue is inside a regular session at that instant. The timezone is read from the ticker (stored at add/alert time) and fed to `buildMarketSessions()`; no Yahoo call is made to decide whether a market is open. Unknown venues and futures are evaluated around the clock.
+2. Requests the distinct symbols with `getQuotesBatched()`: one HTTP call per 50 symbols, no KV read or write.
+3. Evaluates each ticker with `evaluateAlerts()` and writes `alert:state:${userId}` only when an arming side changed. A trigger that touches several tickers of the same user is one write.
+4. For each symbol that triggered, writes `quote:<SYM>` with a 24h TTL. The interactive path only considers a quote fresh for 30s, so this is not a freshness cache: it keeps a correct tier-4 fallback for a user who opens the app hours after the notification.
+
+Cost for 50 tickers with alerts on open venues, 5-minute cadence (~105 scans/day): ~105 Yahoo requests, ~0 KV writes on a quiet day, and two writes per trigger (state + quote).
+
+The trigger lives in `wrangler.toml` (`[triggers] crons = ["*/5 * * * *"]`). Because the OpenNext-generated worker only exports `fetch`, `custom-worker.ts` wraps it with a `scheduled` handler that POSTs to the authenticated route on `APP_URL`; the scan itself is not bundled a second time. A non-atomic KV lock (`cron:alerts:lock`, 10 min TTL) prevents a slow scan from stacking behind itself; a duplicate remains harmless because the first run has already disarmed the side it fired.
+
+Required Worker configuration:
+
+```bash
+npx wrangler secret put CRON_SECRET
+# APP_URL (or NEXT_PUBLIC_APP_URL) must point at the deployed origin
+```
+
+Manual run against a local worker:
+
+```bash
+curl -X POST http://127.0.0.1:8788/api/cron/alerts \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
 Covered by `tests/alerts.test.ts` (session spikes, re-arming, first-evaluation arming, FX conversion and missing rates, one-sided configuration).
 
 ### Verifying the Workers behaviour locally
@@ -281,6 +314,7 @@ done; wait
 - `GET /api/tickers/quote?symbols={AAPL,MC.PA,...}`: Fetch single or batch quotes with valuation multiples.
 - `GET /api/tickers/details?symbol={symbol}&range={1mo}`: Retrieve historical chart time series and detailed statistics. Supported ranges: `1d`, `5d`, `1mo`, `6mo`, `1y`, `5y`.
 - `GET /api/tickers/athl?symbol={symbol}`: Capture the all-time high and all-time low from the full monthly history, used to prefill price-alert thresholds. Excludes the in-progress candle, falls back to the 52-week range when no history is available, and caches the snapshot for 24h. Authenticated.
+- `POST /api/cron/alerts`: Run the scheduled price-alert scan. Requires `Authorization: Bearer $CRON_SECRET`; returns counters only.
 - `GET /api/rates`: EUR-based fiat exchange rates (cached 24h in KV) used for reference-value currency conversion.
 
 ### Pages
