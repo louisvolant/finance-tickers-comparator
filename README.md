@@ -238,6 +238,18 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
    - The in-progress monthly candle is dropped before computing the extremes. Keeping it would persist a reference equal to the current price, so the alert would fire the moment it is created.
    - The snapshot is cached in KV for 24h (to absorb repeated clicks, not to stay fresh) and falls back to the quote's 52-week high/low when the history is empty.
 
+### Price-alert evaluation
+
+Alerts are per-ticker and opt-in: each watchlist entry can carry an `alertHigh` and an `alertLow` threshold, expressed in `alertCurrency` (the listing currency unless the user picks another one). `evaluateAlerts()` in `src/lib/alerts.ts` is a pure function with no KV, network or clock dependency beyond the `now` argument:
+
+- **Session extremes, not just the last price.** The upper rule compares `dayHigh` and the lower rule compares `dayLow`, so a spike that already reverted between two scans is still detected.
+- **Edge-triggered with hysteresis.** After firing, that side stays disarmed until the price pulls back 1% past the threshold (or rebounds 1% for the lower side). A price oscillating around the threshold therefore produces one notification, not one per scan.
+- **The first evaluation only arms.** Enabling an alert on a ticker that is already beyond the threshold stores that side disarmed, so the user is notified about the *next* crossing instead of instantly. This is also why a frozen ATH does not fire on creation.
+- **FX-aware.** A threshold entered in EUR on a USD listing is converted with the EUR-based rates before comparison; when no rate is available the ticker is skipped and its arming state is preserved.
+- **Cheap to persist.** The result reports `changed`, so the scanner only writes the arming state when a side actually flipped.
+
+Covered by `tests/alerts.test.ts` (session spikes, re-arming, first-evaluation arming, FX conversion and missing rates, one-sided configuration).
+
 ### Verifying the Workers behaviour locally
 
 Node cannot reproduce the race, so validate against `workerd` after touching the Yahoo client:

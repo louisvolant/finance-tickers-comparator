@@ -54,7 +54,37 @@ export interface UserTicker {
   order: number;
   createdAt: number;
   quote?: TickerQuote | null;
+  /** Upper price-alert threshold, expressed in `alertCurrency` (absent = disabled). */
+  alertHigh?: number | null;
+  /** Lower price-alert threshold, expressed in `alertCurrency` (absent = disabled). */
+  alertLow?: number | null;
+  /** Currency the thresholds are expressed in (null = listing currency). */
+  alertCurrency?: string | null;
+  /** How the upper threshold was seeded when alerts were enabled. */
+  alertHighSource?: 'ath' | 'custom';
+  /** How the lower threshold was seeded when alerts were enabled. */
+  alertLowSource?: 'atl' | 'custom';
+  /** Epoch ms of the last threshold save, shown next to the ATH/ATL labels. */
+  alertSetAt?: number;
+  /** IANA venue timezone, so the scanner can skip closed markets without a call. */
+  exchangeTimezone?: string | null;
 }
+
+/** Per-ticker arming state for the two price-alert thresholds. */
+export interface AlertStateEntry {
+  /** True while the upper threshold may fire; cleared on trigger, set on pullback. */
+  highArmed: boolean;
+  /** True while the lower threshold may fire; cleared on trigger, set on rebound. */
+  lowArmed: boolean;
+  /** Epoch ms of the last upper trigger, kept across re-arms for the UI. */
+  highTriggeredAt: number | null;
+  /** Epoch ms of the last lower trigger, kept across re-arms for the UI. */
+  lowTriggeredAt: number | null;
+}
+
+/** Alert state for a whole user, stored under a single KV key. */
+export type AlertStateMap = Record<string, AlertStateEntry>;
+
 
 export interface TickerSearchResult {
   symbol: string;
