@@ -265,7 +265,9 @@ The panel is rendered by `PriceAlertsSection` on `/ticker/[symbol]` and covers t
 
 ### Scheduled scan
 
-`runAlertScan()` (`src/lib/alertScan.ts`) is exposed as `POST /api/cron/alerts` (also `GET` for manual runs). The endpoint fails closed: it returns `503` when `CRON_SECRET` is missing and `401` on a wrong or absent `Authorization: Bearer …` header. It never returns symbols or user ids, only counters.
+`runAlertScan()` (`src/lib/alertScan.ts`) is exposed as `POST /api/cron/alerts` (also `GET` for manual runs). The endpoint fails closed: it returns `503` when `CRON_SECRET` is missing and `401` when the request signature is absent, expired or wrong. It never returns symbols or user ids, only counters.
+
+Authentication uses a **timestamped HMAC**, not a static Bearer token. The caller signs `${timestamp}.${METHOD}.${path}` with `CRON_SECRET` (HMAC-SHA256, WebCrypto) and sends `x-cron-timestamp` + `x-cron-signature`. The signature is bound to the exact method and path, and requests older than five minutes are rejected; a leaked signature is therefore useless after that window, and cannot be replayed on another route. The scan's 4-minute lock means a replay inside the five-minute window is skipped instead of running twice. Both sides use `src/lib/cronAuth.ts`, so the scheduled handler and the route cannot drift apart.
 
 What one scan does:
 
@@ -288,9 +290,10 @@ npx wrangler secret put CRON_SECRET
 Manual run against a local worker:
 
 ```bash
-curl -X POST http://127.0.0.1:8788/api/cron/alerts \
-  -H "Authorization: Bearer $CRON_SECRET"
+CRON_SECRET=... APP_URL=http://127.0.0.1:8788 npm run cron:trigger
 ```
+
+The helper (`scripts/trigger-alert-scan.ts`) signs the request with the same module as the scheduled handler; a plain `curl` with the secret in a header no longer works.
 
 ### Web Push delivery
 
@@ -340,7 +343,7 @@ done; wait
 - `GET /api/tickers/quote?symbols={AAPL,MC.PA,...}`: Fetch single or batch quotes with valuation multiples.
 - `GET /api/tickers/details?symbol={symbol}&range={1mo}`: Retrieve historical chart time series and detailed statistics. Supported ranges: `1d`, `5d`, `1mo`, `6mo`, `1y`, `5y`.
 - `GET /api/tickers/athl?symbol={symbol}`: Capture the all-time high and all-time low from the full monthly history, used to prefill price-alert thresholds. Excludes the in-progress candle, falls back to the 52-week range when no history is available, and caches the snapshot for 24h. Authenticated.
-- `POST /api/cron/alerts`: Run the scheduled price-alert scan. Requires `Authorization: Bearer $CRON_SECRET`; returns counters only.
+- `POST /api/cron/alerts`: Run the scheduled price-alert scan. Requires a timestamped HMAC signature (`x-cron-timestamp` + `x-cron-signature`) built with `CRON_SECRET`; returns counters only.
 - `GET /api/rates`: EUR-based fiat exchange rates (cached 24h in KV) used for reference-value currency conversion.
 
 ### Pages

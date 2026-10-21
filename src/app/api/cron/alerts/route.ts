@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEnvVar } from '@/lib/env';
+import { verifyCronRequest } from '@/lib/cronAuth';
 import { runAlertScan } from '@/lib/alertScan';
 import { buildAlertNotification, UserAlertEvent } from '@/lib/alertNotification';
 import { getVapidKeys, sendPushToUser } from '@/lib/push';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-function readSecret(request: NextRequest): string {
-  const bearer = request.headers.get('authorization') || '';
-  if (/^Bearer\s+/i.test(bearer)) return bearer.replace(/^Bearer\s+/i, '').trim();
-  return (request.headers.get('x-cron-secret') || '').trim();
-}
 
 async function handle(request: NextRequest) {
   const secret = getEnvVar('CRON_SECRET');
@@ -21,7 +16,19 @@ async function handle(request: NextRequest) {
     return NextResponse.json({ error: 'CRON_SECRET is not configured' }, { status: 503 });
   }
 
-  if (readSecret(request) !== secret) {
+  // Timestamped HMAC over `${timestamp}.${method}.${path}`. A static Bearer
+  // would be replayable forever if it ever leaked; this expires after 5 minutes.
+  const verification = await verifyCronRequest(
+    secret,
+    request.headers,
+    request.method,
+    request.nextUrl.pathname
+  );
+
+  if (!verification.ok) {
+    // Log the reason but return a generic 401, so the response does not tell an
+    // attacker which check failed.
+    console.warn(`Rejected cron request: ${verification.reason}`);
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

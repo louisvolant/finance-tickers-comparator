@@ -11,6 +11,7 @@
     "deploy": "opennextjs-cloudflare build && wrangler deploy",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "cron:trigger": "tsx scripts/trigger-alert-scan.ts",
     "test:unit": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
     "test": "npm run test:unit"

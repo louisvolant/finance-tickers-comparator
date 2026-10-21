@@ -11,11 +11,18 @@
 //   - importing the data layer here would bundle Yahoo Finance a second time,
 //     next to the generated worker.
 //
-// The route itself authenticates the call with CRON_SECRET, so the URL being
-// public does not matter.
+// The route itself verifies a timestamped HMAC signature, so the URL being
+// public does not matter and a captured request expires after five minutes.
 
 // @ts-ignore `.open-next/worker.js` is generated at build time.
 import { default as handler } from './.open-next/worker.js';
+import {
+  CRON_SIGNATURE_HEADER,
+  CRON_TIMESTAMP_HEADER,
+  signCronRequest,
+} from './src/lib/cronAuth';
+
+const CRON_PATH = '/api/cron/alerts';
 
 interface CronEnv {
   APP_URL?: string;
@@ -39,15 +46,25 @@ export default {
       return;
     }
 
-    ctx.waitUntil(
-      fetch(`${baseUrl}/api/cron/alerts`, {
-        method: 'POST',
-        headers: { authorization: `Bearer ${env.CRON_SECRET}` },
-      })
-        .then((res) => {
-          if (!res.ok) console.error(`Alert cron returned HTTP ${res.status}`);
+    try {
+      const { timestamp, signature } = await signCronRequest(env.CRON_SECRET, 'POST', CRON_PATH);
+
+      ctx.waitUntil(
+        fetch(`${baseUrl}${CRON_PATH}`, {
+          method: 'POST',
+          headers: {
+            [CRON_TIMESTAMP_HEADER]: timestamp,
+            [CRON_SIGNATURE_HEADER]: signature,
+          },
         })
-        .catch((err) => console.error('Alert cron dispatch failed:', err))
-    );
+          .then((res) => {
+            if (!res.ok) console.error(`Alert cron returned HTTP ${res.status}`);
+          })
+          .catch((err) => console.error('Alert cron dispatch failed:', err))
+      );
+    } catch (err) {
+      console.error('Alert cron signing failed:', err);
+    }
   },
 };
+
