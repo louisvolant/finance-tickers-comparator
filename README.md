@@ -233,6 +233,10 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
    - `getBatchQuotes()` is tuned for the interactive path: it caches one KV entry per symbol, which gives partial responses and a per-symbol stale fallback, at the cost of one KV write per symbol whose TTL expired.
    - Background consumers have the opposite constraints, so `getQuotesBatched()` issues **one `yf.quote([...])` request per 50 symbols** and performs **no KV read or write**. Prices are consumed in memory and discarded.
    - Quotes expose `dayHigh`/`dayLow` (intraday extremes of the current regular session) on top of `fiftyTwoWeekHigh`/`Low`, so a scan can detect a threshold touched between two runs even when the price already reverted.
+6. **Freeze-frame ATH/ATL**:
+   - `getAthlSnapshot()` calls `yf.chart(symbol, { range: 'max', interval: '1mo' })` once, when a user enables alerts on a ticker, and never on a schedule. The snapshot means *the ATH as it stood on the day alerts were enabled*, which is what the alert is defined against.
+   - The in-progress monthly candle is dropped before computing the extremes. Keeping it would persist a reference equal to the current price, so the alert would fire the moment it is created.
+   - The snapshot is cached in KV for 24h (to absorb repeated clicks, not to stay fresh) and falls back to the quote's 52-week high/low when the history is empty.
 
 ### Verifying the Workers behaviour locally
 
@@ -258,6 +262,7 @@ done; wait
 - `GET /api/tickers/search?q={query}`: Search tickers across curated catalog and global exchanges.
 - `GET /api/tickers/quote?symbols={AAPL,MC.PA,...}`: Fetch single or batch quotes with valuation multiples.
 - `GET /api/tickers/details?symbol={symbol}&range={1mo}`: Retrieve historical chart time series and detailed statistics. Supported ranges: `1d`, `5d`, `1mo`, `6mo`, `1y`, `5y`.
+- `GET /api/tickers/athl?symbol={symbol}`: Capture the all-time high and all-time low from the full monthly history, used to prefill price-alert thresholds. Excludes the in-progress candle, falls back to the 52-week range when no history is available, and caches the snapshot for 24h. Authenticated.
 - `GET /api/rates`: EUR-based fiat exchange rates (cached 24h in KV) used for reference-value currency conversion.
 
 ### Pages

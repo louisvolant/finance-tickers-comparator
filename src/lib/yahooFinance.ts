@@ -35,8 +35,11 @@ type YahooFinanceClient = InstanceType<typeof YahooFinance>;
  *
  * A client therefore has to be threaded through a request rather than created
  * per call: a batch of 30 symbols must share one crumb fetch, not perform 30.
+ *
+ * Exported so other server-side modules (the ATH/ATL snapshot) reuse this single
+ * factory instead of instantiating a client of their own.
  */
-function createYahooFinanceClient(): YahooFinanceClient {
+export function createYahooFinanceClient(): YahooFinanceClient {
   return new YahooFinance({
     suppressNotices: ['yahooSurvey'],
   });
