@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TrendingUp, ArrowLeft, AlertTriangle, FileText, CheckCircle2 } from 'lucide-react';
+import { getSiteUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
   description: 'Terms of Service and Financial Disclaimer for Ticker-Tracker: terms of use, market data disclaimers, and user responsibilities.',
   alternates: {
-    canonical: 'https://ticker-tracker.pages.dev/terms',
+    canonical: `${getSiteUrl()}/terms`,
   },
   robots: { index: true, follow: true },
 };

@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
+import { getSiteUrl } from '@/lib/site';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ticker-tracker.pages.dev';
+  const baseUrl = getSiteUrl();
   return [
     {
       url: `${baseUrl}`,

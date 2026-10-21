@@ -15,8 +15,14 @@ test.describe('Navigation, Footer Links, Legal & Internationalization', () => {
     await expect(page.getByText(/Important Financial Disclaimer/i)).toBeVisible();
   });
 
-  test('footer displays Personal Page and Portfolio external links', async ({ page }) => {
+  test('footer displays the site URL and the external author links', async ({ page }) => {
     await page.goto('/');
+
+    // The canonical site URL is visible, not only the author's domain.
+    const siteUrl = page.getByTestId('footer-site-url');
+    await expect(siteUrl).toBeVisible();
+    await expect(siteUrl).toHaveAttribute('href', 'https://tickertracker.net');
+    await expect(siteUrl).toHaveText('tickertracker.net');
 
     // Check Personal Page link
     const personalLink = page.locator('a[href="https://www.louisvolant.com"]');

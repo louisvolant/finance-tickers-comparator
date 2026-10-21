@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { TrendingUp, ExternalLink } from 'lucide-react';
 import { useI18n } from '@/context/I18nContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { SITE_DOMAIN, SITE_URL } from '@/lib/site';
 
 export function Footer() {
   const { t } = useI18n();
@@ -26,6 +27,13 @@ export function Footer() {
             <p className="text-[11px] text-slate-400 max-w-md leading-relaxed">
               {t('app.disclaimer')}
             </p>
+            <a
+              href={SITE_URL}
+              data-testid="footer-site-url"
+              className="mt-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 transition"
+            >
+              {SITE_DOMAIN}
+            </a>
           </div>
 
           {/* Links & Language Switcher */}

@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { TrendingUp, ArrowLeft, ShieldCheck, Lock, Database, UserCheck, EyeOff } from 'lucide-react';
+import { getSiteUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: 'Privacy Policy for Ticker-Tracker: data collection, cookies, security, local IndexedDB caching and GDPR rights.',
   alternates: {
-    canonical: 'https://ticker-tracker.pages.dev/privacy',
+    canonical: `${getSiteUrl()}/privacy`,
   },
   robots: { index: true, follow: true },
 };

@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ServiceWorkerRegister } from './components/ServiceWorkerRegister';
+import { getSiteUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://ticker-tracker.pages.dev'),
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: 'Ticker-Tracker — Real-Time Stock & Valuation Tracker',
     template: '%s | Ticker-Tracker',
