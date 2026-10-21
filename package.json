@@ -10,7 +10,7 @@
     "build:worker": "opennextjs-cloudflare build",
     "deploy": "opennextjs-cloudflare build && wrangler deploy",
     "start": "next start",
-    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "test:unit": "tsx --test tests/*.test.ts",
     "test:e2e": "playwright test",
     "test": "npm run test:unit"
@@ -24,7 +24,7 @@
     "clsx": "^2.1.1",
     "date-holidays": "^3.37.0",
     "lucide-react": "^0.511.0",
-    "next": "^15.2.0",
+    "next": "^16.4.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.1",
@@ -33,7 +33,7 @@
     "yahoo-finance2": "^4.0.2"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.20.6",
+    "@opennextjs/cloudflare": "^1.20.12",
     "@playwright/test": "^1.63.0",
     "@types/node": "^22.13.0",
     "@types/react": "^19.0.0",
@@ -41,6 +41,6 @@
     "postcss": "^8.5.3",
     "tsx": "^4.23.15",
     "typescript": "^5.7.3",
-    "wrangler": "^4.143.0"
+    "wrangler": "^4.149.0"
   }
 }

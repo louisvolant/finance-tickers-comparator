@@ -16,12 +16,14 @@ describe('Ticker page cache policy', () => {
   const tickerRule = () => rules.find((r: any) => r.source === '/ticker/:path*');
 
   test('declares a header rule for the ticker route', async () => {
-    rules = await nextConfig.headers();
+    const headers = nextConfig.headers;
+    assert.ok(headers, 'next.config.mjs must declare a headers() function');
+    rules = await headers();
     assert.ok(tickerRule(), 'next.config.mjs must declare headers for /ticker/:path*');
   });
 
   test('forbids storage in every cache (private + no-store)', async () => {
-    const cacheControl = tickerRule().headers.find(
+    const cacheControl = tickerRule()?.headers.find(
       (h: any) => h.key.toLowerCase() === 'cache-control'
     );
     assert.ok(cacheControl, 'a Cache-Control header is required');
