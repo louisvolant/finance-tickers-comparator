@@ -223,5 +223,28 @@
     "opensOn": "Opens {day} at {time}",
     "closed": "Closed",
     "tooltip": "Local exchange time: {zone}"
+  },
+  "alerts": {
+    "title": "Price Alerts",
+    "active": "Active",
+    "intro": "Get a notification when this ticker crosses a price level.",
+    "enable": "Enable price alerts",
+    "edit": "Edit",
+    "disable": "Disable",
+    "save": "Save alerts",
+    "cancel": "Cancel",
+    "highLabel": "Alert above",
+    "lowLabel": "Alert below",
+    "athLabel": "ATH as of {date}",
+    "atlLabel": "ATL as of {date}",
+    "hint": "Leave a field empty to disable that side. Each side notifies once, then re-arms after the price comes back.",
+    "saved": "Saved. The next scan will arm the alert within 5 minutes.",
+    "errorSave": "Could not save the alerts.",
+    "errorSnapshot": "Could not load the ATH/ATL for this ticker.",
+    "errorPositive": "Thresholds must be positive numbers.",
+    "errorOrder": "The lower threshold must be below the upper one.",
+    "signIn": "Sign in to enable price alerts on your tickers.",
+    "signInCta": "Sign in",
+    "addToWatchlist": "Add this ticker to your watchlist to enable alerts."
   }
 }

@@ -223,5 +223,28 @@
     "opensOn": "Abre {day} às {time}",
     "closed": "Fechado",
     "tooltip": "Hora local da bolsa: {zone}"
+  },
+  "alerts": {
+    "title": "Alertas de preço",
+    "active": "Ativos",
+    "intro": "Receba uma notificação quando este ativo cruzar um nível de preço.",
+    "enable": "Ativar alertas de preço",
+    "edit": "Editar",
+    "disable": "Desativar",
+    "save": "Guardar alertas",
+    "cancel": "Cancelar",
+    "highLabel": "Alerta acima de",
+    "lowLabel": "Alerta abaixo de",
+    "athLabel": "ATH de {date}",
+    "atlLabel": "ATL de {date}",
+    "hint": "Deixe um campo vazio para desativar esse lado. Cada lado notifica uma vez e rearma quando o preço regressa.",
+    "saved": "Guardado. A próxima análise armará o alerta em 5 minutos.",
+    "errorSave": "Não foi possível guardar os alertas.",
+    "errorSnapshot": "Não foi possível obter o ATH/ATL deste ativo.",
+    "errorPositive": "Os limites devem ser números positivos.",
+    "errorOrder": "O limite inferior deve ser menor que o superior.",
+    "signIn": "Inicie sessão para ativar alertas de preço.",
+    "signInCta": "Iniciar sessão",
+    "addToWatchlist": "Adicione este ativo à sua lista para ativar os alertas."
   }
 }

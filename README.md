@@ -250,6 +250,10 @@ Alerts are per-ticker and opt-in: each watchlist entry can carry an `alertHigh` 
 
 Thresholds and arming state live in two different KV keys on purpose. `user:tickers:${userId}` holds the definitions and is written only by the user's requests; `alert:state:${userId}` holds `{ highArmed, lowArmed, highTriggeredAt, lowTriggeredAt }` per ticker and is written only by the scanner. Sharing one key would make each side read-modify-write the other and silently lose updates. A change to either threshold, or to the threshold currency, deletes the ticker's state entry: the next scan then runs the first-evaluation path, arms against the live quote and its FX rate, and cannot notify at save time.
 
+**Opt-in per ticker.** There is no bulk switch and no migration for existing accounts: each user has to open a ticker page and press *Enable price alerts* once for that ticker. The first activation calls `GET /api/tickers/athl`, prefills the two fields with the frozen ATH/ATL and saves immediately, so leaving the fields untouched keeps exactly those values. Editing a field marks that side as `custom`; clearing a field disables that side only.
+
+The panel is rendered by `PriceAlertsSection` on `/ticker/[symbol]` and covers three states: guest (*sign in*), authenticated but not watching the symbol (*add it first*) and enabled (*edit / disable*). Covered by `e2e/price-alerts.spec.ts`.
+
 Covered by `tests/alerts.test.ts` (session spikes, re-arming, first-evaluation arming, FX conversion and missing rates, one-sided configuration).
 
 ### Verifying the Workers behaviour locally

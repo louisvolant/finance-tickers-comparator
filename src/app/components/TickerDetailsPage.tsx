@@ -40,6 +40,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCurrencyRates } from '@/context/CurrencyContext';
 import { EditTrackingModal } from './EditTrackingModal';
 import { MarketStatusBadge } from './MarketStatusBadge';
+import { PriceAlertsSection } from './PriceAlertsSection';
 
 type TimeRange = '1d' | '5d' | '1mo' | '6mo' | '1y' | '5y';
 
@@ -440,6 +441,14 @@ export function TickerDetailsPage({ symbol }: { symbol: string }) {
               </div>
             ) : null}
           </div>
+
+          {/* Price alerts: opt-in per ticker, seeded from a frozen ATH/ATL. */}
+          <PriceAlertsSection
+            entry={entry}
+            isAuthenticated={!!user}
+            symbol={symbol}
+            onSaved={(updated) => setEntry(updated)}
+          />
 
           {/* Historical Price Chart */}
           <div className="p-4 bg-slate-950/60 border border-slate-800/80 rounded-xl mb-4">

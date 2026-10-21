@@ -223,5 +223,28 @@
     "opensOn": "Apre {day} alle {time}",
     "closed": "Chiuso",
     "tooltip": "Ora locale della borsa: {zone}"
+  },
+  "alerts": {
+    "title": "Avvisi di prezzo",
+    "active": "Attivi",
+    "intro": "Ricevi una notifica quando questo titolo supera un livello di prezzo.",
+    "enable": "Attiva avvisi di prezzo",
+    "edit": "Modifica",
+    "disable": "Disattiva",
+    "save": "Salva avvisi",
+    "cancel": "Annulla",
+    "highLabel": "Avviso sopra",
+    "lowLabel": "Avviso sotto",
+    "athLabel": "ATH al {date}",
+    "atlLabel": "ATL al {date}",
+    "hint": "Lascia un campo vuoto per disattivare quel lato. Ogni lato avvisa una volta, poi si riarma quando il prezzo torna.",
+    "saved": "Salvato. La prossima scansione armerà l'avviso entro 5 minuti.",
+    "errorSave": "Impossibile salvare gli avvisi.",
+    "errorSnapshot": "Impossibile caricare ATH/ATL per questo titolo.",
+    "errorPositive": "Le soglie devono essere numeri positivi.",
+    "errorOrder": "La soglia inferiore deve essere minore di quella superiore.",
+    "signIn": "Accedi per attivare gli avvisi di prezzo.",
+    "signInCta": "Accedi",
+    "addToWatchlist": "Aggiungi questo titolo alla watchlist per attivare gli avvisi."
   }
 }

@@ -223,5 +223,28 @@
     "opensOn": "Öffnet {day} um {time}",
     "closed": "Geschlossen",
     "tooltip": "Ortszeit der Börse: {zone}"
+  },
+  "alerts": {
+    "title": "Preisalarme",
+    "active": "Aktiv",
+    "intro": "Erhalten Sie eine Benachrichtigung, wenn dieser Wert eine Preisschwelle überschreitet.",
+    "enable": "Preisalarme aktivieren",
+    "edit": "Bearbeiten",
+    "disable": "Deaktivieren",
+    "save": "Alarme speichern",
+    "cancel": "Abbrechen",
+    "highLabel": "Alarm über",
+    "lowLabel": "Alarm unter",
+    "athLabel": "ATH vom {date}",
+    "atlLabel": "ATL vom {date}",
+    "hint": "Lassen Sie ein Feld leer, um diese Seite zu deaktivieren. Jede Seite meldet einmal und wird nach einer Rückkehr des Kurses erneut aktiviert.",
+    "saved": "Gespeichert. Der nächste Scan aktiviert den Alarm innerhalb von 5 Minuten.",
+    "errorSave": "Alarme konnten nicht gespeichert werden.",
+    "errorSnapshot": "ATH/ATL konnte für diesen Wert nicht geladen werden.",
+    "errorPositive": "Schwellenwerte müssen positive Zahlen sein.",
+    "errorOrder": "Der untere Schwellenwert muss unter dem oberen liegen.",
+    "signIn": "Melden Sie sich an, um Preisalarme zu aktivieren.",
+    "signInCta": "Anmelden",
+    "addToWatchlist": "Fügen Sie diesen Wert Ihrer Watchlist hinzu, um Alarme zu aktivieren."
   }
 }

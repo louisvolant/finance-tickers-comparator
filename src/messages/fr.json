@@ -223,5 +223,28 @@
     "opensOn": "Ouvre {day} à {time}",
     "closed": "Fermé",
     "tooltip": "Heure locale de la place : {zone}"
+  },
+  "alerts": {
+    "title": "Alertes de prix",
+    "active": "Actives",
+    "intro": "Recevez une notification quand ce titre franchit un niveau de prix.",
+    "enable": "Activer les alertes de prix",
+    "edit": "Modifier",
+    "disable": "Désactiver",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "highLabel": "Alerte au-dessus de",
+    "lowLabel": "Alerte en dessous de",
+    "athLabel": "ATH au {date}",
+    "atlLabel": "ATL au {date}",
+    "hint": "Laissez un champ vide pour désactiver ce côté. Chaque côté notifie une fois, puis se réarme après un retour du cours.",
+    "saved": "Enregistré. Le prochain scan armera l'alerte sous 5 minutes.",
+    "errorSave": "Impossible d'enregistrer les alertes.",
+    "errorSnapshot": "Impossible de récupérer l'ATH/ATL de ce titre.",
+    "errorPositive": "Les seuils doivent être des nombres positifs.",
+    "errorOrder": "Le seuil bas doit être inférieur au seuil haut.",
+    "signIn": "Connectez-vous pour activer des alertes de prix.",
+    "signInCta": "Se connecter",
+    "addToWatchlist": "Ajoutez ce titre à votre liste pour activer les alertes."
   }
 }
