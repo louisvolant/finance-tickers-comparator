@@ -4,6 +4,8 @@ import { kvGet, kvPut } from '@/lib/kv';
 import { getQuote, getBatchQuotes } from '@/lib/yahooFinance';
 import { UserTicker } from '@/lib/types';
 import { ISO_FIAT_CURRENCIES } from '@/lib/currencies';
+import { parseAlertThreshold, validateAlertPair } from '@/lib/alerts';
+import { clearTickerAlertState } from '@/lib/alertStore';
 
 export const runtime = 'nodejs';
 
@@ -15,6 +17,19 @@ function parseTrackingCurrency(value: unknown): string | null {
   if (typeof value !== 'string' || !value.trim()) return null;
   const code = value.trim().toUpperCase();
   return ISO_FIAT_CURRENCIES.has(code) ? code : null;
+}
+
+/**
+ * Strict variant used for alert thresholds: an invalid code is a client error,
+ * not a silent fallback to the listing currency (which would move the threshold
+ * onto a different scale).
+ */
+function parseAlertCurrency(value: unknown): { valid: boolean; code: string | null } {
+  if (value === undefined) return { valid: true, code: null };
+  if (value === null || value === '') return { valid: true, code: null };
+  if (typeof value !== 'string') return { valid: false, code: null };
+  const code = value.trim().toUpperCase();
+  return { valid: ISO_FIAT_CURRENCIES.has(code), code };
 }
 
 /**
@@ -103,6 +118,9 @@ export async function POST(request: NextRequest) {
       order: tickers.length,
       createdAt: Date.now(),
       quote,
+      // Persisted separately from the quote so the alert scanner can decide
+      // whether the venue is open without calling Yahoo for a closed market.
+      exchangeTimezone: quote.exchangeTimezone ?? null,
     };
 
     tickers.push(newTicker);
@@ -125,7 +143,17 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { id, trackingValue, trackingCurrency, notes } = await request.json();
+    const {
+      id,
+      trackingValue,
+      trackingCurrency,
+      notes,
+      alertHigh,
+      alertLow,
+      alertCurrency,
+      alertHighSource,
+      alertLowSource,
+    } = await request.json();
 
     if (!id || typeof id !== 'string') {
       return NextResponse.json({ error: 'Ticker ID is required' }, { status: 400 });
@@ -139,28 +167,100 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Ticker not found' }, { status: 404 });
     }
 
+    const ticker = tickers[tickerIndex];
+
     if (trackingValue !== undefined) {
       if (trackingValue === null || trackingValue === '') {
-        tickers[tickerIndex].trackingValue = null;
+        ticker.trackingValue = null;
       } else {
         const parsed = Number(trackingValue);
         if (!isNaN(parsed) && parsed > 0) {
-          tickers[tickerIndex].trackingValue = Number(parsed.toFixed(4));
+          ticker.trackingValue = Number(parsed.toFixed(4));
         }
       }
     }
 
     if (trackingCurrency !== undefined) {
-      tickers[tickerIndex].trackingCurrency = parseTrackingCurrency(trackingCurrency);
+      ticker.trackingCurrency = parseTrackingCurrency(trackingCurrency);
     }
 
     if (notes !== undefined && typeof notes === 'string') {
-      tickers[tickerIndex].notes = notes.trim();
+      ticker.notes = notes.trim();
+    }
+
+    // --- Price alerts -------------------------------------------------------
+    // Alerts are opt-in per ticker: nothing here is ever set by the add flow, so
+    // a new watchlist entry never notifies until the user enables it explicitly.
+    const parsedHigh = parseAlertThreshold(alertHigh);
+    const parsedLow = parseAlertThreshold(alertLow);
+
+    if (!parsedHigh.valid || !parsedLow.valid) {
+      return NextResponse.json(
+        { error: 'Alert thresholds must be positive numbers' },
+        { status: 400 }
+      );
+    }
+
+    const parsedCurrency = parseAlertCurrency(alertCurrency);
+    if (!parsedCurrency.valid) {
+      return NextResponse.json({ error: 'Unsupported alert currency' }, { status: 400 });
+    }
+
+    const nextHigh = parsedHigh.provided ? parsedHigh.value : ticker.alertHigh ?? null;
+    const nextLow = parsedLow.provided ? parsedLow.value : ticker.alertLow ?? null;
+    // An omitted currency keeps the stored one; an explicit null resets it to
+    // the listing currency.
+    const nextCurrency =
+      alertCurrency === undefined ? ticker.alertCurrency ?? null : parsedCurrency.code;
+
+    const pairError = validateAlertPair(nextHigh, nextLow);
+    if (pairError) {
+      return NextResponse.json({ error: pairError }, { status: 400 });
+    }
+
+    const alertsTouched =
+      parsedHigh.provided || parsedLow.provided || alertCurrency !== undefined;
+    const alertsChanged =
+      alertsTouched &&
+      (nextHigh !== (ticker.alertHigh ?? null) ||
+        nextLow !== (ticker.alertLow ?? null) ||
+        nextCurrency !== (ticker.alertCurrency ?? null));
+
+    if (alertsTouched) {
+      ticker.alertHigh = nextHigh;
+      ticker.alertLow = nextLow;
+      ticker.alertCurrency = nextCurrency;
+
+      // Only rewrite a source when its threshold was part of this request:
+      // changing just the currency must not turn a seeded "ath" into "custom".
+      if (parsedHigh.provided || alertHighSource !== undefined) {
+        ticker.alertHighSource =
+          nextHigh === null ? undefined : alertHighSource === 'ath' ? 'ath' : 'custom';
+      }
+      if (parsedLow.provided || alertLowSource !== undefined) {
+        ticker.alertLowSource =
+          nextLow === null ? undefined : alertLowSource === 'atl' ? 'atl' : 'custom';
+      }
+
+      // Persist the venue timezone alongside the thresholds: the scanner uses it
+      // to skip closed markets without a quote request.
+      if (!ticker.exchangeTimezone && ticker.quote?.exchangeTimezone) {
+        ticker.exchangeTimezone = ticker.quote.exchangeTimezone;
+      }
+
+      ticker.alertSetAt = Date.now();
+    }
+
+    if (alertsChanged) {
+      // Delete the arming state instead of resetting it: the next scan will run
+      // the "first evaluation" path, arm against the live quote and its FX rate,
+      // and never notify on save.
+      await clearTickerAlertState(user.id, ticker.id);
     }
 
     await kvPut(tickersKey, tickers);
 
-    return NextResponse.json({ ticker: tickers[tickerIndex] });
+    return NextResponse.json({ ticker });
   } catch (err) {
     console.error('Error updating ticker:', err);
     return NextResponse.json({ error: 'Failed to update ticker' }, { status: 500 });
@@ -200,6 +300,10 @@ export async function DELETE(request: NextRequest) {
     });
 
     await kvPut(tickersKey, tickers);
+
+    // The arming state would otherwise outlive the ticker and resurface if the
+    // same ticker were added back later with a different configuration.
+    await clearTickerAlertState(user.id, id);
 
     return NextResponse.json({ success: true });
   } catch (err) {

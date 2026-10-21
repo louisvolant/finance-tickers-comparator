@@ -17,6 +17,10 @@ async function handleDeleteAccount() {
     // Delete user tickers
     await kvDelete(`user:tickers:${sessionUser.id}`);
 
+    // Delete price-alert arming state (kept in its own key so the scanner can
+    // write it without racing the user's watchlist edits).
+    await kvDelete(`alert:state:${sessionUser.id}`);
+
     // Delete user records
     if (user?.email) {
       await kvDelete(`user:by-email:${user.email.toLowerCase()}`);

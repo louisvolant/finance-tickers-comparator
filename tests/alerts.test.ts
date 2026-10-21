@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { alertsEnabled, evaluateAlerts, ALERT_REARM_PULLBACK } from '../src/lib/alerts.ts';
+import { alertsEnabled, evaluateAlerts, ALERT_REARM_PULLBACK, parseAlertThreshold, validateAlertPair } from '../src/lib/alerts.ts';
 import type { TickerQuote } from '../src/lib/types.ts';
 
 const NOW = Date.UTC(2026, 9, 21, 14, 0, 0);
@@ -190,5 +190,56 @@ describe('Price alert evaluation', () => {
 
     assert.strictEqual(result.events.length, 1);
     assert.strictEqual(result.events[0].side, 'low');
+  });
+});
+
+describe('Alert threshold validation', () => {
+  test('distinguishes an omitted field from an explicit clear', () => {
+    assert.deepStrictEqual(parseAlertThreshold(undefined), {
+      provided: false,
+      valid: true,
+      value: null,
+    });
+    assert.deepStrictEqual(parseAlertThreshold(null), {
+      provided: true,
+      valid: true,
+      value: null,
+    });
+    assert.deepStrictEqual(parseAlertThreshold(''), {
+      provided: true,
+      valid: true,
+      value: null,
+    });
+  });
+
+  test('accepts positive numbers and rounds them', () => {
+    assert.deepStrictEqual(parseAlertThreshold(210.123456), {
+      provided: true,
+      valid: true,
+      value: 210.1235,
+    });
+    assert.deepStrictEqual(parseAlertThreshold('42.5'), {
+      provided: true,
+      valid: true,
+      value: 42.5,
+    });
+  });
+
+  test('rejects zero, negatives and non-numeric input', () => {
+    for (const raw of [0, -5, 'abc', NaN, Infinity, {}, []]) {
+      assert.deepStrictEqual(parseAlertThreshold(raw), {
+        provided: true,
+        valid: false,
+        value: null,
+      });
+    }
+  });
+
+  test('requires the lower threshold to be below the upper one', () => {
+    assert.strictEqual(validateAlertPair(200, 150), null);
+    assert.strictEqual(validateAlertPair(200, null), null);
+    assert.strictEqual(validateAlertPair(null, null), null);
+    assert.ok(validateAlertPair(150, 150));
+    assert.ok(validateAlertPair(150, 200));
   });
 });

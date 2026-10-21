@@ -248,6 +248,8 @@ Alerts are per-ticker and opt-in: each watchlist entry can carry an `alertHigh` 
 - **FX-aware.** A threshold entered in EUR on a USD listing is converted with the EUR-based rates before comparison; when no rate is available the ticker is skipped and its arming state is preserved.
 - **Cheap to persist.** The result reports `changed`, so the scanner only writes the arming state when a side actually flipped.
 
+Thresholds and arming state live in two different KV keys on purpose. `user:tickers:${userId}` holds the definitions and is written only by the user's requests; `alert:state:${userId}` holds `{ highArmed, lowArmed, highTriggeredAt, lowTriggeredAt }` per ticker and is written only by the scanner. Sharing one key would make each side read-modify-write the other and silently lose updates. A change to either threshold, or to the threshold currency, deletes the ticker's state entry: the next scan then runs the first-evaluation path, arms against the live quote and its FX rate, and cannot notify at save time.
+
 Covered by `tests/alerts.test.ts` (session spikes, re-arming, first-evaluation arming, FX conversion and missing rates, one-sided configuration).
 
 ### Verifying the Workers behaviour locally
@@ -300,7 +302,7 @@ Guarded by `tests/tickerCachePolicy.test.ts` (config-level header assertions) an
 ### Watchlist Management
 - `GET /api/tickers`: Retrieve authenticated user's tickers enriched with quotes.
 - `POST /api/tickers`: Add a ticker with tracking value baseline and optional notes.
-- `PATCH /api/tickers`: Update tracking value or notes for a ticker.
+- `PATCH /api/tickers`: Update tracking value, notes, or the two price-alert thresholds (`alertHigh`, `alertLow`, optional `alertCurrency`; `null` clears a side). Threshold changes delete the ticker's arming state so the next scan re-arms against the live quote.
 - `DELETE /api/tickers?id={id}`: Remove a ticker and auto-compact order indices.
 - `POST /api/tickers/reorder`: Persist custom ordering sequence of tickers.
 

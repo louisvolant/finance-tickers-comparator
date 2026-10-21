@@ -51,6 +51,43 @@ export function alertsEnabled(ticker: Partial<AlertTicker>): boolean {
   return (typeof high === 'number' && high > 0) || (typeof low === 'number' && low > 0);
 }
 
+export interface ParsedAlertThreshold {
+  /** False when the field was absent from the request (leave it untouched). */
+  provided: boolean;
+  /** False when the value was present but not a positive finite number. */
+  valid: boolean;
+  /** Normalized value; null means "clear this side". */
+  value: number | null;
+}
+
+/**
+ * Normalize an incoming threshold.
+ *
+ * `undefined` means the field was not part of the request (leave it untouched),
+ * `null` or `''` explicitly clears it, and anything that is not a positive
+ * finite number is rejected instead of silently ignored.
+ */
+export function parseAlertThreshold(raw: unknown): ParsedAlertThreshold {
+  if (raw === undefined) return { provided: false, valid: true, value: null };
+  if (raw === null || raw === '') return { provided: true, valid: true, value: null };
+
+  const parsed =
+    typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw.trim()) : NaN;
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return { provided: true, valid: false, value: null };
+  }
+  return { provided: true, valid: true, value: Number(parsed.toFixed(4)) };
+}
+
+/** Cross-field validation of the two thresholds. Returns an error message or null. */
+export function validateAlertPair(high: number | null, low: number | null): string | null {
+  if (high !== null && low !== null && low >= high) {
+    return 'The lower alert threshold must be below the upper one';
+  }
+  return null;
+}
+
 /** State used the first time a ticker is evaluated. */
 export function createAlertState(
   highAlreadyCrossed: boolean,
