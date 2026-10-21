@@ -245,6 +245,11 @@
     "errorOrder": "La soglia inferiore deve essere minore di quella superiore.",
     "signIn": "Accedi per attivare gli avvisi di prezzo.",
     "signInCta": "Accedi",
-    "addToWatchlist": "Aggiungi questo titolo alla watchlist per attivare gli avvisi."
+    "addToWatchlist": "Aggiungi questo titolo alla watchlist per attivare gli avvisi.",
+    "notificationsOn": "Notifiche attive su questo dispositivo.",
+    "notificationsOff": "Le notifiche non sono attive su questo dispositivo.",
+    "notificationsBlocked": "Le notifiche sono bloccate. Consentile nelle impostazioni del browser.",
+    "notificationsUnsupported": "Questo browser non può ricevere notifiche push. Su iOS, installa prima l'app nella schermata Home.",
+    "enableNotifications": "Attiva notifiche"
   }
 }

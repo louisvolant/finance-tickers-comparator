@@ -135,6 +135,11 @@ NEXT_PUBLIC_APP_URL="https://ticker-tracker.yourdomain.com"
 # Shared secret for the scheduled price-alert scan (openssl rand -hex 32).
 # Also used by the scheduled handler, so it must be available in the Worker env.
 CRON_SECRET="your-cron-secret"
+
+# Web Push (VAPID). Generate with: node scripts/generate-vapid-keys.mjs
+VAPID_PUBLIC_KEY="your-vapid-public-key"
+VAPID_PRIVATE_KEY="your-vapid-private-key"
+VAPID_SUBJECT="mailto:contact@your-domain.example"
 ```
 
 ### Cloudflare Workers KV & Wrangler Setup
@@ -287,6 +292,27 @@ curl -X POST http://127.0.0.1:8788/api/cron/alerts \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 
+### Web Push delivery
+
+When a scan triggers, the route groups the events by user and sends **one notification per user** (`buildAlertNotification`), listing up to three crossed tickers. A single event names the symbol, the threshold and the observed session extreme; clicking it opens `/ticker/<symbol>`.
+
+Delivery uses `@block65/webcrypto-web-push` (WebCrypto, RFC 8291 `aes128gcm` + RFC 8292 VAPID) rather than the classic `web-push` package, whose `https.request` dependency does not work on Workers. Subscriptions live in `push:subs:${userId}` (one key per account, up to 10 devices, de-duplicated by endpoint). A push service answer of `404`/`410` removes the endpoint; a transient `5xx`/`429` keeps it. Account deletion drops the key.
+
+Generate the keys once:
+
+```bash
+node scripts/generate-vapid-keys.mjs
+npx wrangler secret put VAPID_PUBLIC_KEY
+npx wrangler secret put VAPID_PRIVATE_KEY
+npx wrangler secret put VAPID_SUBJECT   # mailto:...
+```
+
+The browser subscribes from the alert panel (`enablePushNotifications()`), which requests the permission synchronously from the click so iOS keeps the user gesture, fetches the public key from `GET /api/push/subscribe`, then persists the subscription. `public/sw.js` owns the `push` and `notificationclick` handlers; `CACHE_NAME` is bumped to `v3` so existing installs pick them up.
+
+Platform notes: Chrome, Edge and Firefox work on desktop and Android; Safari requires iOS 16.4+ **and** the PWA installed on the home screen — on a regular Safari tab `PushManager` is unavailable and the panel says so. Notification wording is currently English only, because the scan has no request context and therefore no locale.
+
+Without VAPID keys the scan still runs and arms alerts; only delivery is skipped, so adding the keys later starts notifying without touching stored state.
+
 Covered by `tests/alerts.test.ts` (session spikes, re-arming, first-evaluation arming, FX conversion and missing rates, one-sided configuration).
 
 ### Verifying the Workers behaviour locally
@@ -330,7 +356,7 @@ The ticker page renders per-user data: the **reference target (cost basis)**, th
 1. **Resolution is client-side.** `TickerDetailsPage` re-reads its watchlist entry from `/api/tickers` (authenticated) or IndexedDB (guest) in the browser. The server-rendered shell therefore contains **no** personalized values, so even a hypothetically cached shell would stay user-agnostic.
 2. **The route is forced dynamic.** `export const dynamic = 'force-dynamic'` and `export const revalidate = 0` prevent a future `generateStaticParams` or ISR window from turning the page into a shared artifact.
 3. **Explicit response headers.** `next.config.mjs` sets `Cache-Control: private, no-store, max-age=0, must-revalidate` for `/ticker/:path*`. `private` additionally forbids shared/CDN caches. A `Vary: Cookie` header is deliberately *not* set: Next.js manages `Vary` itself and overwrites it, so it would be misleading.
-4. **Service Worker network-only.** `public/sw.js` treats `/ticker/` and `/api/` as *personalized routes*: they are never read from **nor written to** Cache Storage. Previously every navigation was cached, which persisted the page on disk. `CACHE_NAME` was bumped to `v2` so existing installs purge those entries on activation.
+4. **Service Worker network-only.** `public/sw.js` treats `/ticker/` and `/api/` as *personalized routes*: they are never read from **nor written to** Cache Storage. Previously every navigation was cached, which persisted the page on disk. `CACHE_NAME` was bumped to `v2` so existing installs purge those entries on activation, then to `v3` when the Web Push handlers were added.
 
 Offline note: because `/ticker/` is deliberately not cached, opening it with no network shows the browser's offline state rather than a stale page. That is intentional — a cached page could replay another user's reference target on a shared device.
 
@@ -343,6 +369,11 @@ Guarded by `tests/tickerCachePolicy.test.ts` (config-level header assertions) an
 - `PATCH /api/tickers`: Update tracking value, notes, or the two price-alert thresholds (`alertHigh`, `alertLow`, optional `alertCurrency`; `null` clears a side). Threshold changes delete the ticker's arming state so the next scan re-arms against the live quote.
 - `DELETE /api/tickers?id={id}`: Remove a ticker and auto-compact order indices.
 - `POST /api/tickers/reorder`: Persist custom ordering sequence of tickers.
+
+### Push Notifications
+- `GET /api/push/subscribe`: Return the VAPID public key and the number of subscribed devices. Authenticated.
+- `POST /api/push/subscribe`: Persist a browser `PushSubscription` (idempotent per endpoint, up to 10 devices). Authenticated.
+- `DELETE /api/push/subscribe?endpoint={endpoint}`: Remove one device. Authenticated.
 
 ### Authentication & Account
 - `POST /api/auth/register`: Create user account with PBKDF2 password encryption.

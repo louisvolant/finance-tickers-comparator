@@ -1,7 +1,7 @@
 // Ticker-Tracker Service Worker for offline PWA support
 // Bump when the caching policy below changes so existing installs drop stale
-// entries (v2: stopped persisting /ticker/ navigations).
-const CACHE_NAME = 'ticker-tracker-v2';
+// entries (v2: stopped persisting /ticker/ navigations; v3: push notifications).
+const CACHE_NAME = 'ticker-tracker-v3';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -106,4 +106,61 @@ self.addEventListener('fetch', (event) => {
       })
     );
   }
+});
+
+/**
+ * Price-alert push notifications.
+ *
+ * The payload is built server-side (`buildAlertNotification`) and contains a
+ * title, a body, the route to open and a replacement tag. `userVisibleOnly`
+ * subscriptions require showing a notification for every push, so this handler
+ * always calls showNotification.
+ */
+self.addEventListener('push', (event) => {
+  let payload = {};
+
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    // A malformed payload must still surface something rather than being dropped.
+    payload = { title: 'Ticker-Tracker', body: event.data ? event.data.text() : '' };
+  }
+
+  const title = payload.title || 'Ticker-Tracker';
+  const options = {
+    body: payload.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    // Same tag = the newer alert replaces the older one on the lock screen.
+    tag: payload.tag || 'price-alerts',
+    data: { url: payload.url || '/' },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+
+      // Focus an existing tab and navigate it, instead of stacking new windows.
+      for (const client of windows) {
+        if ('focus' in client) {
+          await client.focus();
+          if ('navigate' in client) {
+            await client.navigate(targetUrl);
+          }
+          return;
+        }
+      }
+
+      if (self.clients.openWindow) {
+        await self.clients.openWindow(targetUrl);
+      }
+    })()
+  );
 });

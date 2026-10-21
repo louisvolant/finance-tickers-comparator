@@ -245,6 +245,11 @@
     "errorOrder": "El umbral inferior debe ser menor que el superior.",
     "signIn": "Inicia sesión para activar alertas de precio.",
     "signInCta": "Iniciar sesión",
-    "addToWatchlist": "Añade este valor a tu lista para activar las alertas."
+    "addToWatchlist": "Añade este valor a tu lista para activar las alertas.",
+    "notificationsOn": "Notificaciones activadas en este dispositivo.",
+    "notificationsOff": "Las notificaciones no están activadas en este dispositivo.",
+    "notificationsBlocked": "Las notificaciones están bloqueadas. Permítelas en los ajustes del navegador.",
+    "notificationsUnsupported": "Este navegador no puede recibir notificaciones push. En iOS, instala primero la app en la pantalla de inicio.",
+    "enableNotifications": "Activar notificaciones"
   }
 }

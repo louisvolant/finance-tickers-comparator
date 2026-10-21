@@ -1,11 +1,16 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Bell, BellRing, Check, Loader2, X } from 'lucide-react';
 import { UserTicker } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
 import { normalizeCurrency } from '@/lib/currencies';
 import { useI18n } from '@/context/I18nContext';
+import {
+  enablePushNotifications,
+  getPushState,
+  PushPermissionState,
+} from '@/lib/pushClient';
 
 interface PriceAlertsSectionProps {
   /** Watchlist entry backing the page; null when the symbol is not tracked. */
@@ -48,6 +53,18 @@ export function PriceAlertsSection({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [pushState, setPushState] = useState<PushPermissionState | 'idle'>('idle');
+
+  // Reflect the browser's permission state and whether this device is subscribed.
+  useEffect(() => {
+    let active = true;
+    getPushState().then((state) => {
+      if (active) setPushState(state);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const listingCurrency = useMemo(
     () => normalizeCurrency(entry?.quote?.currency).code,
@@ -139,6 +156,12 @@ export function PriceAlertsSection({
    */
   const handleEnable = async () => {
     if (!entry) return;
+
+    // Start the permission request synchronously from the click while the user
+    // gesture is still active (required by Safari on iOS), then let it resolve
+    // in parallel with the ATH/ATL fetch and the save.
+    const pushPromise = enablePushNotifications();
+
     setLoadingSnapshot(true);
     setError(null);
     setNotice(null);
@@ -161,8 +184,10 @@ export function PriceAlertsSection({
         snapshot.source === 'max' ? 'ath' : 'custom',
         snapshot.source === 'max' ? 'atl' : 'custom'
       );
+      setPushState(await pushPromise);
     } catch (err: any) {
       setError(err?.message || t('alerts.errorSnapshot'));
+      setPushState(await pushPromise);
     } finally {
       setLoadingSnapshot(false);
     }
@@ -369,24 +394,54 @@ export function PriceAlertsSection({
           </div>
         </form>
       ) : (
-        <div className="mt-2 grid grid-cols-2 gap-3 text-xs">
-          <div>
-            <span className="text-[10px] text-slate-500 block">{highLabel}</span>
-            <span className="font-semibold text-emerald-400 font-mono">
-              {entry?.alertHigh !== null && entry?.alertHigh !== undefined
-                ? formatCurrency(entry.alertHigh, listingCurrency)
-                : '—'}
-            </span>
+        <>
+          <div className="mt-2 grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <span className="text-[10px] text-slate-500 block">{highLabel}</span>
+              <span className="font-semibold text-emerald-400 font-mono">
+                {entry?.alertHigh !== null && entry?.alertHigh !== undefined
+                  ? formatCurrency(entry.alertHigh, listingCurrency)
+                  : '—'}
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-500 block">{lowLabel}</span>
+              <span className="font-semibold text-rose-400 font-mono">
+                {entry?.alertLow !== null && entry?.alertLow !== undefined
+                  ? formatCurrency(entry.alertLow, listingCurrency)
+                  : '—'}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-[10px] text-slate-500 block">{lowLabel}</span>
-            <span className="font-semibold text-rose-400 font-mono">
-              {entry?.alertLow !== null && entry?.alertLow !== undefined
-                ? formatCurrency(entry.alertLow, listingCurrency)
-                : '—'}
+
+          {/* A push subscription is per device, not per ticker. */}
+          <div
+            data-testid="push-status"
+            className="mt-3 pt-3 border-t border-slate-800/60 flex items-center justify-between gap-2 flex-wrap"
+          >
+            <span className="text-[10px] text-slate-500">
+              {pushState === 'granted'
+                ? t('alerts.notificationsOn')
+                : pushState === 'denied'
+                  ? t('alerts.notificationsBlocked')
+                  : pushState === 'unsupported'
+                    ? t('alerts.notificationsUnsupported')
+                    : t('alerts.notificationsOff')}
             </span>
+
+            {(pushState === 'default' || pushState === 'error' || pushState === 'idle') && (
+              <button
+                type="button"
+                data-testid="enable-push"
+                onClick={async () => setPushState(await enablePushNotifications())}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold transition cursor-pointer"
+              >
+                <Bell className="w-3 h-3" />
+                <span>{t('alerts.enableNotifications')}</span>
+              </button>
+            )}
           </div>
-        </div>
+        </>
       )}
     </section>
   );

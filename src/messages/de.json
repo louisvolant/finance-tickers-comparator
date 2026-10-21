@@ -245,6 +245,11 @@
     "errorOrder": "Der untere Schwellenwert muss unter dem oberen liegen.",
     "signIn": "Melden Sie sich an, um Preisalarme zu aktivieren.",
     "signInCta": "Anmelden",
-    "addToWatchlist": "Fügen Sie diesen Wert Ihrer Watchlist hinzu, um Alarme zu aktivieren."
+    "addToWatchlist": "Fügen Sie diesen Wert Ihrer Watchlist hinzu, um Alarme zu aktivieren.",
+    "notificationsOn": "Benachrichtigungen sind auf diesem Gerät aktiviert.",
+    "notificationsOff": "Benachrichtigungen sind auf diesem Gerät nicht aktiviert.",
+    "notificationsBlocked": "Benachrichtigungen sind blockiert. Erlauben Sie sie in den Browsereinstellungen.",
+    "notificationsUnsupported": "Dieser Browser kann keine Push-Benachrichtigungen empfangen. Installieren Sie die App unter iOS zuerst auf dem Home-Bildschirm.",
+    "enableNotifications": "Benachrichtigungen aktivieren"
   }
 }

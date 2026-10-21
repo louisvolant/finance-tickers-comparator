@@ -13,7 +13,8 @@
 
 import { kvGet, kvList, kvPut } from './kv';
 import { getAlertStateMap, putAlertStateMap } from './alertStore';
-import { AlertFireEvent, alertsEnabled, evaluateAlerts } from './alerts';
+import { alertsEnabled, evaluateAlerts } from './alerts';
+import { UserAlertEvent } from './alertNotification';
 import { UserTicker } from './types';
 import { buildMarketSessions } from './marketCalendar';
 import { getExchangeRates } from './exchangeRates';
@@ -52,7 +53,7 @@ export interface AlertScanResult {
   scannedTickers: number;
   /** Quotes actually returned by Yahoo for this scan. */
   fetchedQuotes: number;
-  triggered: AlertFireEvent[];
+  triggered: UserAlertEvent[];
   /** Number of per-user state keys written. */
   stateWrites: number;
   /** Number of quote-cache keys written. */
@@ -153,7 +154,7 @@ export async function runAlertScan(now: number = Date.now()): Promise<AlertScanR
     else byUser.set(candidate.userId, [candidate]);
   }
 
-  const triggered: AlertFireEvent[] = [];
+  const triggered: UserAlertEvent[] = [];
   let stateWrites = 0;
 
   for (const [userId, candidates] of byUser) {
@@ -165,7 +166,9 @@ export async function runAlertScan(now: number = Date.now()): Promise<AlertScanR
       if (!quote) continue;
 
       const result = evaluateAlerts(ticker, quote, rates, stateMap[ticker.id], now);
-      if (result.events.length > 0) triggered.push(...result.events);
+      if (result.events.length > 0) {
+        for (const event of result.events) triggered.push({ ...event, userId });
+      }
 
       if (result.changed) {
         stateMap[ticker.id] = result.state;

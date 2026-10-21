@@ -31,6 +31,8 @@ export interface AlertFireEvent {
   observed: number;
   /** Last traded price at evaluation time. */
   price: number;
+  /** Currency of `price` and `observed` (listing currency). */
+  priceCurrency: string;
   /** Threshold as entered by the user, in `currency`. */
   thresholdOriginal: number;
   /** Currency the user entered the threshold in. */
@@ -168,6 +170,7 @@ export function evaluateAlerts(
         threshold: highThreshold,
         observed: observedHigh,
         price,
+        priceCurrency: listingCurrency,
         thresholdOriginal: highOriginal as number,
         currency: alertCurrency,
       });
@@ -189,6 +192,7 @@ export function evaluateAlerts(
         threshold: lowThreshold,
         observed: observedLow,
         price,
+        priceCurrency: listingCurrency,
         thresholdOriginal: lowOriginal as number,
         currency: alertCurrency,
       });

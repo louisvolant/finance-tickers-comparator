@@ -21,6 +21,10 @@ async function handleDeleteAccount() {
     // write it without racing the user's watchlist edits).
     await kvDelete(`alert:state:${sessionUser.id}`);
 
+    // Delete Web Push subscriptions: an orphaned endpoint would keep receiving
+    // notifications for an account that no longer exists.
+    await kvDelete(`push:subs:${sessionUser.id}`);
+
     // Delete user records
     if (user?.email) {
       await kvDelete(`user:by-email:${user.email.toLowerCase()}`);

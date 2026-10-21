@@ -245,6 +245,11 @@
     "errorOrder": "Le seuil bas doit être inférieur au seuil haut.",
     "signIn": "Connectez-vous pour activer des alertes de prix.",
     "signInCta": "Se connecter",
-    "addToWatchlist": "Ajoutez ce titre à votre liste pour activer les alertes."
+    "addToWatchlist": "Ajoutez ce titre à votre liste pour activer les alertes.",
+    "notificationsOn": "Notifications activées sur cet appareil.",
+    "notificationsOff": "Les notifications ne sont pas activées sur cet appareil.",
+    "notificationsBlocked": "Les notifications sont bloquées. Autorisez-les dans les réglages du navigateur.",
+    "notificationsUnsupported": "Ce navigateur ne peut pas recevoir de notifications push. Sur iOS, installez d'abord l'application sur l'écran d'accueil.",
+    "enableNotifications": "Activer les notifications"
   }
 }
