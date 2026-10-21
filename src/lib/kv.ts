@@ -1,6 +1,7 @@
 // Universal KV storage adapter supporting Cloudflare Workers KV and Local Dev / Testing fallback
 import fs from 'node:fs';
 import path from 'node:path';
+import { getRuntimeEnv } from './env';
 
 interface LocalKVEntry {
   value: string;
@@ -42,6 +43,14 @@ function persistLocalStore() {
  * Resolves the Cloudflare KV binding if running in Cloudflare Workers.
  */
 function getCloudflareKV(): any {
+  // Bindings injected by a scheduled/queue handler take precedence: those
+  // invocations have no request context for getCloudflareContext().
+  const runtime = getRuntimeEnv();
+  if (runtime) {
+    const injected = runtime.KV || runtime.ticker_tracker_kv || runtime.TICKER_TRACKER_KV;
+    if (injected) return injected;
+  }
+
   try {
     // Check OpenNext context
     // eslint-disable-next-line @typescript-eslint/no-require-imports

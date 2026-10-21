@@ -4,31 +4,21 @@
 // need a `scheduled` handler, so this wrapper re-uses the generated fetch
 // handler and adds one.
 //
-// The scan is dispatched over HTTP to `/api/cron/alerts` rather than imported
-// directly:
-//   - the route already runs inside a request context, which is where the KV
-//     helper resolves its binding from;
-//   - importing the data layer here would bundle Yahoo Finance a second time,
-//     next to the generated worker.
+// The scan runs in-process: calling it directly avoids exposing an internal
+// endpoint to the public internet and removes the Worker→itself HTTP round trip.
+// Bindings are injected explicitly because a scheduled invocation has no request
+// context for getCloudflareContext() to read.
 //
-// The route itself verifies a timestamped HMAC signature, so the URL being
-// public does not matter and a captured request expires after five minutes.
+// Cost: importing the scan here bundles the data layer next to the generated
+// worker (~+430 KiB gzip, measured), which keeps the whole Worker under the
+// 3 MiB free-plan limit. If that headroom disappears, move the scan to a
+// dedicated queue consumer Worker instead.
 
 // @ts-ignore `.open-next/worker.js` is generated at build time.
 import { default as handler } from './.open-next/worker.js';
-import {
-  CRON_SIGNATURE_HEADER,
-  CRON_TIMESTAMP_HEADER,
-  signCronRequest,
-} from './src/lib/cronAuth';
-
-const CRON_PATH = '/api/cron/alerts';
-
-interface CronEnv {
-  APP_URL?: string;
-  NEXT_PUBLIC_APP_URL?: string;
-  CRON_SECRET?: string;
-}
+import { setRuntimeEnv } from './src/lib/env';
+import { runAlertScan } from './src/lib/alertScan';
+import { dispatchAlertNotifications } from './src/lib/alertDispatch';
 
 interface CronContext {
   waitUntil(promise: Promise<unknown>): void;
@@ -37,34 +27,23 @@ interface CronContext {
 export default {
   fetch: handler.fetch,
 
-  async scheduled(_event: unknown, env: CronEnv, ctx: CronContext) {
-    const baseUrl = (env.APP_URL || env.NEXT_PUBLIC_APP_URL || '').replace(/\/+$/, '');
+  async scheduled(_event: unknown, env: Record<string, any>, ctx: CronContext) {
+    // Make the Worker bindings visible to getEnvVar() and kvGet().
+    setRuntimeEnv(env);
 
-    if (!baseUrl || !env.CRON_SECRET) {
-      // Fail visibly in the logs instead of silently never notifying.
-      console.error('Alert cron skipped: APP_URL and CRON_SECRET must be configured');
-      return;
-    }
+    ctx.waitUntil(
+      (async () => {
+        const result = await runAlertScan();
 
-    try {
-      const { timestamp, signature } = await signCronRequest(env.CRON_SECRET, 'POST', CRON_PATH);
+        if (result.skipped) return;
 
-      ctx.waitUntil(
-        fetch(`${baseUrl}${CRON_PATH}`, {
-          method: 'POST',
-          headers: {
-            [CRON_TIMESTAMP_HEADER]: timestamp,
-            [CRON_SIGNATURE_HEADER]: signature,
-          },
-        })
-          .then((res) => {
-            if (!res.ok) console.error(`Alert cron returned HTTP ${res.status}`);
-          })
-          .catch((err) => console.error('Alert cron dispatch failed:', err))
-      );
-    } catch (err) {
-      console.error('Alert cron signing failed:', err);
-    }
+        const delivery = await dispatchAlertNotifications(result.triggered);
+
+        console.log(
+          `Alert scan: ${result.scannedTickers} tickers scanned, ` +
+            `${result.triggered.length} triggered, ${delivery.pushed} pushed`
+        );
+      })().catch((err) => console.error('Alert scan failed:', err))
+    );
   },
 };
-

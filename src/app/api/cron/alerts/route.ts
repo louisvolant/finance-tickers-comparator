@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getEnvVar } from '@/lib/env';
 import { verifyCronRequest } from '@/lib/cronAuth';
 import { runAlertScan } from '@/lib/alertScan';
-import { buildAlertNotification, UserAlertEvent } from '@/lib/alertNotification';
-import { getVapidKeys, sendPushToUser } from '@/lib/push';
+import { dispatchAlertNotifications } from '@/lib/alertDispatch';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,33 +40,7 @@ async function handle(request: NextRequest) {
       return NextResponse.json({ skipped: 'scan-already-running' });
     }
 
-    // One notification per user per scan, grouping every ticker that fired.
-    const byUser = new Map<string, UserAlertEvent[]>();
-    for (const event of result.triggered) {
-      const list = byUser.get(event.userId);
-      if (list) list.push(event);
-      else byUser.set(event.userId, [event]);
-    }
-
-    let pushed = 0;
-    let prunedSubscriptions = 0;
-
-    // VAPID is checked once here rather than inside every send, so a deployment
-    // without keys logs a single warning instead of one per user.
-    if (getVapidKeys() && byUser.size > 0) {
-      const deliveries = await Promise.allSettled(
-        Array.from(byUser, ([userId, events]) =>
-          sendPushToUser(userId, buildAlertNotification(events))
-        )
-      );
-
-      for (const delivery of deliveries) {
-        if (delivery.status === 'fulfilled') {
-          pushed += delivery.value.sent;
-          prunedSubscriptions += delivery.value.pruned;
-        }
-      }
-    }
+    const delivery = await dispatchAlertNotifications(result.triggered);
 
     // Counts only: the endpoint is secret-gated, but symbol lists and user ids
     // do not belong in a response or in the logs.
@@ -76,8 +49,8 @@ async function handle(request: NextRequest) {
         scannedTickers: result.scannedTickers,
         fetchedQuotes: result.fetchedQuotes,
         triggered: result.triggered.length,
-        pushed,
-        prunedSubscriptions,
+        pushed: delivery.pushed,
+        prunedSubscriptions: delivery.prunedSubscriptions,
         stateWrites: result.stateWrites,
         quoteWrites: result.quoteWrites,
       },

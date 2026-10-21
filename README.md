@@ -132,8 +132,8 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 # Optional explicit public application URL (e.g. for OAuth redirects behind reverse proxies)
 NEXT_PUBLIC_APP_URL="https://ticker-tracker.yourdomain.com"
 
-# Shared secret for the scheduled price-alert scan (openssl rand -hex 32).
-# Also used by the scheduled handler, so it must be available in the Worker env.
+# Shared secret for the optional manual alert-scan endpoint (openssl rand -hex 32).
+# The scheduled scan runs in-process and does not use it.
 CRON_SECRET="your-cron-secret"
 
 # Web Push (VAPID). Generate with: node scripts/generate-vapid-keys.mjs
@@ -265,9 +265,9 @@ The panel is rendered by `PriceAlertsSection` on `/ticker/[symbol]` and covers t
 
 ### Scheduled scan
 
-`runAlertScan()` (`src/lib/alertScan.ts`) is exposed as `POST /api/cron/alerts` (also `GET` for manual runs). The endpoint fails closed: it returns `503` when `CRON_SECRET` is missing and `401` when the request signature is absent, expired or wrong. It never returns symbols or user ids, only counters.
+`runAlertScan()` (`src/lib/alertScan.ts`) is called **in-process** by the `scheduled` handler in `custom-worker.ts`. There is no HTTP round trip and no internal endpoint involved in the cron path: the handler injects its Worker bindings into the runtime (`setRuntimeEnv(env)`), runs the scan, then dispatches notifications (`dispatchAlertNotifications`). This removes the public surface and the `APP_URL` dependency from the scheduled path.
 
-Authentication uses a **timestamped HMAC**, not a static Bearer token. The caller signs `${timestamp}.${METHOD}.${path}` with `CRON_SECRET` (HMAC-SHA256, WebCrypto) and sends `x-cron-timestamp` + `x-cron-signature`. The signature is bound to the exact method and path, and requests older than five minutes are rejected; a leaked signature is therefore useless after that window, and cannot be replayed on another route. The scan's 4-minute lock means a replay inside the five-minute window is skipped instead of running twice. Both sides use `src/lib/cronAuth.ts`, so the scheduled handler and the route cannot drift apart.
+`POST /api/cron/alerts` (and `GET` for manual runs) still exists as an **ops-only** trigger. It fails closed: `503` when `CRON_SECRET` is missing, `401` when the signature is absent, expired or wrong. Authentication is a **timestamped HMAC**, not a static Bearer token: the caller signs `${timestamp}.${METHOD}.${path}` with `CRON_SECRET` (HMAC-SHA256, WebCrypto) and sends `x-cron-timestamp` + `x-cron-signature`. The signature is bound to the exact method and path and expires after five minutes; the scan's 4-minute lock makes a replay inside that window a no-op. Both the route and `scripts/trigger-alert-scan.ts` use `src/lib/cronAuth.ts`.
 
 What one scan does:
 
@@ -275,17 +275,23 @@ What one scan does:
 2. Requests the distinct symbols with `getQuotesBatched()`: one HTTP call per 50 symbols, no KV read or write.
 3. Evaluates each ticker with `evaluateAlerts()` and writes `alert:state:${userId}` only when an arming side changed. A trigger that touches several tickers of the same user is one write.
 4. For each symbol that triggered, writes `quote:<SYM>` with a 24h TTL. The interactive path only considers a quote fresh for 30s, so this is not a freshness cache: it keeps a correct tier-4 fallback for a user who opens the app hours after the notification.
+5. Groups the events per user and sends one Web Push notification per user (`dispatchAlertNotifications`).
 
 Cost for 50 tickers with alerts on open venues, 5-minute cadence (~105 scans/day): ~105 Yahoo requests, one lock write per active scan (none when every venue is closed, because the lock is taken after planning), ~0 further writes on a quiet day, and two writes per trigger (state + quote). Each scan also reads one watchlist key per account (`user:tickers:<id>`), so the read budget scales with the number of accounts, not with the number of tickers. `kvList()` returns at most one page (1,000 keys): beyond that, the scan would need pagination or a symbol-to-users index.
 
-The trigger lives in `wrangler.toml` (`[triggers] crons = ["*/5 * * * *"]`). Because the OpenNext-generated worker only exports `fetch`, `custom-worker.ts` wraps it with a `scheduled` handler that POSTs to the authenticated route on `APP_URL`; the scan itself is not bundled a second time. A non-atomic KV lock (`cron:alerts:lock`, 4 min TTL, never deleted) prevents a slow scan from stacking behind itself; it is only written once the plan is known to contain at least one open ticker, so nights and weekends cost zero writes. A duplicate remains harmless because the first run has already disarmed the side it fired.
+The trigger lives in `wrangler.toml` (`[triggers] crons = ["*/5 * * * *"]`). A non-atomic KV lock (`cron:alerts:lock`, 4 min TTL, never deleted) prevents a slow scan from stacking behind itself; it is only written once the plan is known to contain at least one open ticker, so nights and weekends cost zero writes. A duplicate remains harmless because the first run has already disarmed the side it fired.
 
-Required Worker configuration:
+Importing the scan into the custom worker bundles the data layer next to the generated worker: measured at ~+430 KiB gzip (2.09 → 2.46 MiB), still under the 3 MiB free-plan limit. If that headroom disappears, move the scan to a dedicated queue-consumer Worker and have `scheduled` only enqueue a message.
+
+Required Worker configuration for push:
 
 ```bash
-npx wrangler secret put CRON_SECRET
-# APP_URL (or NEXT_PUBLIC_APP_URL) must point at the deployed origin
+npx wrangler secret put VAPID_PUBLIC_KEY
+npx wrangler secret put VAPID_PRIVATE_KEY
+npx wrangler secret put VAPID_SUBJECT
 ```
+
+`CRON_SECRET` is only needed for the manual trigger endpoint; the scheduled path does not use it. `APP_URL` is no longer required by the cron.
 
 Manual run against a local worker:
 
@@ -293,11 +299,11 @@ Manual run against a local worker:
 CRON_SECRET=... APP_URL=http://127.0.0.1:8788 npm run cron:trigger
 ```
 
-The helper (`scripts/trigger-alert-scan.ts`) signs the request with the same module as the scheduled handler; a plain `curl` with the secret in a header no longer works.
+The helper (`scripts/trigger-alert-scan.ts`) signs the request with the same module as the route; a plain `curl` with the secret in a header does not work.
 
 ### Web Push delivery
 
-When a scan triggers, the route groups the events by user and sends **one notification per user** (`buildAlertNotification`), listing up to three crossed tickers. A single event names the symbol, the threshold and the observed session extreme; clicking it opens `/ticker/<symbol>`.
+When a scan triggers, `dispatchAlertNotifications()` groups the events by user and sends **one notification per user** (`buildAlertNotification`), listing up to three crossed tickers. A single event names the symbol, the threshold and the observed session extreme; clicking it opens `/ticker/<symbol>`. The scheduled handler and the manual route call the same function.
 
 Delivery uses `@block65/webcrypto-web-push` (WebCrypto, RFC 8291 `aes128gcm` + RFC 8292 VAPID) rather than the classic `web-push` package, whose `https.request` dependency does not work on Workers. Subscriptions live in `push:subs:${userId}` (one key per account, up to 10 devices, de-duplicated by endpoint). A push service answer of `404`/`410` removes the endpoint; a transient `5xx`/`429` keeps it. Account deletion drops the key.
 
