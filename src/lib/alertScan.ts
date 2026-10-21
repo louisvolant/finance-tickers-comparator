@@ -32,6 +32,23 @@ const USER_TICKERS_PREFIX = 'user:tickers:';
  */
 const TRIGGERED_QUOTE_TTL_SEC = 24 * 60 * 60;
 
+/**
+ * Non-atomic "one scan at a time" marker.
+ *
+ * Written only when the plan is non-empty, and left to expire instead of being
+ * deleted: outside market hours a scan costs zero KV writes, and during market
+ * hours it costs one. The TTL is shorter than the trigger interval (five
+ * minutes) so the next run always proceeds.
+ *
+ * The lock is not a correctness guarantee: Workers KV has no compare-and-set, so
+ * two invocations starting in the same instant can both observe it empty. A
+ * duplicate scan is harmless because the first one has already disarmed the side
+ * it fired.
+ */
+const LOCK_KEY = 'cron:alerts:lock';
+const LOCK_TTL_SEC = 4 * 60;
+
+
 export interface AlertScanEntry {
   userId: string;
   tickers: UserTicker[];
@@ -49,6 +66,8 @@ export interface AlertScanPlan {
 }
 
 export interface AlertScanResult {
+  /** True when another scan held the lock. */
+  skipped: boolean;
   /** Tickers that were eligible (alerts enabled and venue open). */
   scannedTickers: number;
   /** Quotes actually returned by Yahoo for this scan. */
@@ -125,7 +144,10 @@ export async function runAlertScan(now: number = Date.now()): Promise<AlertScanR
 
   const plan = planScan(entries, now);
   if (plan.symbols.length === 0) {
+    // Nothing open and nothing armed: return before touching the lock, so a
+    // night or a weekend costs zero KV writes.
     return {
+      skipped: false,
       scannedTickers: 0,
       fetchedQuotes: 0,
       triggered: [],
@@ -133,6 +155,20 @@ export async function runAlertScan(now: number = Date.now()): Promise<AlertScanR
       quoteWrites: 0,
     };
   }
+
+  if (await kvGet(LOCK_KEY)) {
+    return {
+      skipped: true,
+      scannedTickers: 0,
+      fetchedQuotes: 0,
+      triggered: [],
+      stateWrites: 0,
+      quoteWrites: 0,
+    };
+  }
+
+  // One write per active scan; expiry is shorter than the cron interval.
+  await kvPut(LOCK_KEY, String(now), { expirationTtl: LOCK_TTL_SEC });
 
   const quotes = await getQuotesBatched(plan.symbols);
 
@@ -193,6 +229,7 @@ export async function runAlertScan(now: number = Date.now()): Promise<AlertScanR
   }
 
   return {
+    skipped: false,
     scannedTickers: plan.candidates.length,
     fetchedQuotes: Object.keys(quotes).length,
     triggered,

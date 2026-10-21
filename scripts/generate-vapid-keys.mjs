@@ -29,8 +29,9 @@ if (!scalar) {
   throw new Error('Could not export the private scalar');
 }
 
-console.log('# Add VAPID_PUBLIC_KEY to your build environment and the client build.');
-console.log('# Add both keys to the Worker environment (wrangler secret put ...).');
+console.log('# Runtime configuration only: set both keys in the Worker environment');
+console.log('# (wrangler secret put ...). The public key is served to browsers by');
+console.log('# GET /api/push/subscribe, so it is not needed at build time.');
 console.log(`VAPID_PUBLIC_KEY=${point.toString('base64url')}`);
 console.log(`VAPID_PRIVATE_KEY=${scalar}`);
 console.log('VAPID_SUBJECT=mailto:contact@your-domain.example');

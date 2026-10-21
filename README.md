@@ -274,9 +274,9 @@ What one scan does:
 3. Evaluates each ticker with `evaluateAlerts()` and writes `alert:state:${userId}` only when an arming side changed. A trigger that touches several tickers of the same user is one write.
 4. For each symbol that triggered, writes `quote:<SYM>` with a 24h TTL. The interactive path only considers a quote fresh for 30s, so this is not a freshness cache: it keeps a correct tier-4 fallback for a user who opens the app hours after the notification.
 
-Cost for 50 tickers with alerts on open venues, 5-minute cadence (~105 scans/day): ~105 Yahoo requests, ~0 KV writes on a quiet day, and two writes per trigger (state + quote).
+Cost for 50 tickers with alerts on open venues, 5-minute cadence (~105 scans/day): ~105 Yahoo requests, one lock write per active scan (none when every venue is closed, because the lock is taken after planning), ~0 further writes on a quiet day, and two writes per trigger (state + quote). Each scan also reads one watchlist key per account (`user:tickers:<id>`), so the read budget scales with the number of accounts, not with the number of tickers. `kvList()` returns at most one page (1,000 keys): beyond that, the scan would need pagination or a symbol-to-users index.
 
-The trigger lives in `wrangler.toml` (`[triggers] crons = ["*/5 * * * *"]`). Because the OpenNext-generated worker only exports `fetch`, `custom-worker.ts` wraps it with a `scheduled` handler that POSTs to the authenticated route on `APP_URL`; the scan itself is not bundled a second time. A non-atomic KV lock (`cron:alerts:lock`, 10 min TTL) prevents a slow scan from stacking behind itself; a duplicate remains harmless because the first run has already disarmed the side it fired.
+The trigger lives in `wrangler.toml` (`[triggers] crons = ["*/5 * * * *"]`). Because the OpenNext-generated worker only exports `fetch`, `custom-worker.ts` wraps it with a `scheduled` handler that POSTs to the authenticated route on `APP_URL`; the scan itself is not bundled a second time. A non-atomic KV lock (`cron:alerts:lock`, 4 min TTL, never deleted) prevents a slow scan from stacking behind itself; it is only written once the plan is known to contain at least one open ticker, so nights and weekends cost zero writes. A duplicate remains harmless because the first run has already disarmed the side it fired.
 
 Required Worker configuration:
 
