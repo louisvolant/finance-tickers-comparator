@@ -116,6 +116,11 @@ function normalizeQuote(raw: any, symbolOverride?: string): TickerQuote {
   const fiftyTwoWeekHigh = raw.fiftyTwoWeekHigh !== undefined && raw.fiftyTwoWeekHigh !== null ? Number(raw.fiftyTwoWeekHigh) / factor : null;
   const fiftyTwoWeekLow = raw.fiftyTwoWeekLow !== undefined && raw.fiftyTwoWeekLow !== null ? Number(raw.fiftyTwoWeekLow) / factor : null;
 
+  // Intraday extremes of the current regular session. Alert rules read them so a
+  // spike between two polls is still detected, even if the price already reverted.
+  const dayHigh = raw.regularMarketDayHigh !== undefined && raw.regularMarketDayHigh !== null ? Number(raw.regularMarketDayHigh) / factor : null;
+  const dayLow = raw.regularMarketDayLow !== undefined && raw.regularMarketDayLow !== null ? Number(raw.regularMarketDayLow) / factor : null;
+
   return {
     symbol: sym,
     name: raw.shortName || raw.longName || sym || 'Unknown',
@@ -129,6 +134,8 @@ function normalizeQuote(raw: any, symbolOverride?: string): TickerQuote {
     dividendYield: raw.dividendYield ? Number((raw.dividendYield * 100).toFixed(2)) : null,
     fiftyTwoWeekHigh,
     fiftyTwoWeekLow,
+    dayHigh: dayHigh !== null ? Number(dayHigh.toFixed(4)) : null,
+    dayLow: dayLow !== null ? Number(dayLow.toFixed(4)) : null,
     epsTrailingTwelveMonths: epsTrailingRaw,
     beta: raw.beta ?? null,
     volume: raw.regularMarketVolume ?? null,
@@ -331,6 +338,75 @@ export async function getBatchQuotes(symbols: string[]): Promise<Record<string, 
   });
 
   await Promise.allSettled(fetchPromises);
+  return results;
+}
+
+/**
+ * Maximum number of symbols per Yahoo quote request.
+ *
+ * Yahoo's v7 quote endpoint accepts many symbols in one call (the library's own
+ * `quoteCombine` defaults to 100). 50 keeps the query string comfortably short
+ * and bounds the blast radius of a malformed row.
+ */
+const QUOTE_BATCH_SIZE = 50;
+
+/**
+ * Fetch many quotes with one HTTP request per batch, **without touching KV**.
+ *
+ * `getBatchQuotes()` above is built for the interactive path: it keeps one KV
+ * entry per symbol so a partial watchlist can be served fast, with a per-symbol
+ * stale fallback. A background consumer (the price-alert scanner) has the
+ * opposite needs: it reads the prices once, keeps them in memory, and must not
+ * spend hundreds of KV writes per run. This entry point therefore batches at
+ * the HTTP level and performs no cache read or write.
+ */
+export async function getQuotesBatched(symbols: string[]): Promise<Record<string, TickerQuote>> {
+  const unique = Array.from(new Set(symbols.map((s) => s.trim().toUpperCase()))).filter(Boolean);
+  if (unique.length === 0) return {};
+
+  // One client for the whole scan, so every batch shares a single crumb fetch.
+  const yf = createYahooFinanceClient();
+  const results: Record<string, TickerQuote> = {};
+
+  for (let i = 0; i < unique.length; i += QUOTE_BATCH_SIZE) {
+    const chunk = unique.slice(i, i + QUOTE_BATCH_SIZE);
+
+    try {
+      // validateResult: false keeps a single malformed row from rejecting the
+      // whole batch; normalizeQuote() already defends against missing fields.
+      const rows = (await yf.quote(
+        chunk,
+        { return: 'array' },
+        { validateResult: false }
+      )) as any[];
+
+      for (const row of rows || []) {
+        if (!row?.symbol) continue;
+        const symbol = String(row.symbol).toUpperCase();
+        if (!chunk.includes(symbol)) continue;
+        results[symbol] = normalizeQuote(row, symbol);
+      }
+    } catch (err) {
+      console.warn(`Batched quote request failed for ${chunk.length} symbols:`, err);
+    }
+
+    // Retry only the symbols the batch did not return, one by one: an unknown or
+    // delisted symbol must not cost the whole chunk.
+    const missing = chunk.filter((symbol) => !results[symbol]);
+    if (missing.length === 0) continue;
+
+    await Promise.allSettled(
+      missing.map(async (symbol) => {
+        try {
+          const row = await yf.quote(symbol, {}, { validateResult: false });
+          if (row?.symbol) results[symbol] = normalizeQuote(row, symbol);
+        } catch {
+          // Unknown, delisted or throttled symbol: skip it for this scan.
+        }
+      })
+    );
+  }
+
   return results;
 }
 

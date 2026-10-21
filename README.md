@@ -229,6 +229,10 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
    - Ticker-Tracker therefore creates **one client per request** via `createYahooFinanceClient()`, threaded through the call chain so a 30-symbol batch still performs a single crumb fetch rather than thirty.
    - Cost: a cold request pays the crumb flow once (~1.3 s for a 28-symbol batch); subsequent requests are served from KV in ~25 ms, and no client is created at all when every symbol is still cached.
    - This race is invisible under Node, so the invariant is enforced by `tests/yahooClientLifecycle.test.ts` (no module-scope instantiation, single factory, one client per batch).
+5. **Batched quote polling (background scans)**:
+   - `getBatchQuotes()` is tuned for the interactive path: it caches one KV entry per symbol, which gives partial responses and a per-symbol stale fallback, at the cost of one KV write per symbol whose TTL expired.
+   - Background consumers have the opposite constraints, so `getQuotesBatched()` issues **one `yf.quote([...])` request per 50 symbols** and performs **no KV read or write**. Prices are consumed in memory and discarded.
+   - Quotes expose `dayHigh`/`dayLow` (intraday extremes of the current regular session) on top of `fiftyTwoWeekHigh`/`Low`, so a scan can detect a threshold touched between two runs even when the price already reverted.
 
 ### Verifying the Workers behaviour locally
 

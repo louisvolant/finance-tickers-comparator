@@ -11,6 +11,10 @@ export interface TickerQuote {
   dividendYield: number | null;
   fiftyTwoWeekHigh: number | null;
   fiftyTwoWeekLow: number | null;
+  /** Intraday high of the current regular session, in listing currency. */
+  dayHigh?: number | null;
+  /** Intraday low of the current regular session, in listing currency. */
+  dayLow?: number | null;
   epsTrailingTwelveMonths: number | null;
   beta: number | null;
   volume: number | null;
