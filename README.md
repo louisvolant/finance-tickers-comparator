@@ -146,12 +146,8 @@ VAPID_SUBJECT="mailto:contact@your-domain.example"
 MARKET_HOLIDAYS_MAX_AGE_DAYS="30"
 
 # Account storage backend: kv | dual | d1 (see "Account storage (D1)").
-# dual is the automatic default once the DB binding exists.
-AUTH_BACKEND="dual"
-
-# Temporary secret for the KV -> D1 account backfill. Remove it (and the
-# /api/admin/migrate-users route) once the migration is verified.
-MIGRATION_SECRET=""
+# d1 is the production default; dual is only for the transition.
+AUTH_BACKEND="d1"
 ```
 
 ### Cloudflare Workers KV & Wrangler Setup
@@ -300,34 +296,25 @@ to `next dev`. The custom `.kv-local.json` fallback is only used when no binding
 is available; with the OpenNext dev context, `next dev` uses the local KV/D1 in
 `.wrangler/state`.
 
-**Backfill**
-
-The dual backend already imports a KV account into D1 the first time it is read.
-The explicit backfill covers accounts that have not logged in since the deploy:
-
-```bash
-curl -X POST "https://www.tickertracker.net/api/admin/migrate-users?dryRun=1" \
-  -H "Authorization: Bearer $MIGRATION_SECRET"
-curl -X POST "https://www.tickertracker.net/api/admin/migrate-users" \
-  -H "Authorization: Bearer $MIGRATION_SECRET"
-```
-
-The route lists every `user:by-email:*` key (paginated, not limited to the first
-1,000), uses `INSERT OR IGNORE`, and is safe to run twice. `dryRun` never writes.
-It returns counters only and never logs emails or hashes.
-
 **Switch and contract**
 
-1. Run the backfill and verify the counters.
-2. Set `AUTH_BACKEND=d1` and redeploy.
-3. After a soak period, remove `MIGRATION_SECRET` and
-   `src/app/api/admin/migrate-users/route.ts`, then delete the legacy `user:*`
-   KV keys (keep an off-repository backup first).
+The production KV namespace was empty when D1 shipped, so no backfill was needed.
+The rollout was:
+
+1. Verify a registration and a login on the deployed app.
+2. Set `AUTH_BACKEND=d1` (already the production default in `wrangler.toml`).
+3. If a previous deployment wrote legacy `user:*` KV keys, delete them after
+   keeping an off-repository backup.
 
 **Rollback**
 
 While `AUTH_BACKEND=dual`, set it back to `kv` and redeploy: KV is still current.
 After the contract phase, restore the KV backup or use D1 Time Travel.
+
+`getSessionUser()` verifies that the account still exists in the repository
+before accepting a signed cookie. A cookie issued before the account was deleted
+(or before the storage migration) is therefore rejected on the next request
+instead of surviving until its 30-day expiry.
 
 The unique index `users_email_unique` is the actual guard against concurrent
 duplicate registrations; the route maps the constraint error to `409` without a
@@ -513,6 +500,3 @@ Guarded by `tests/tickerCachePolicy.test.ts` (config-level header assertions) an
 - `POST /api/auth/changepassword`: Change password with verification of existing password.
 - `PATCH /api/auth/preferences`: Update the user's preferred reference currency (used for multi-currency tracking).
 - `DELETE /api/auth/delete_my_account`: Permanently delete the account, its D1 row and the associated KV side data.
-
-### Admin (temporary)
-- `POST /api/admin/migrate-users?dryRun=1`: Idempotent KV → D1 account backfill, paginated and write-free in `dryRun` mode. Requires `Authorization: Bearer $MIGRATION_SECRET`. Remove this route and the secret after the migration is verified.

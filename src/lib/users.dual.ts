@@ -1,9 +1,8 @@
 // Dual-write adapter used during the KV → D1 transition.
 //
 // D1 is the source of truth. KV is kept in sync so a rollback (`AUTH_BACKEND=kv`)
-// loses nothing, and reads fall back to KV so users who have not been backfilled
-// yet can still log in. A KV hit is imported into D1 lazily, which makes the
-// migration self-healing even before the explicit backfill runs.
+// loses nothing, and reads fall back to KV so legacy users can still log in. A KV
+// hit is imported into D1 lazily, which makes the transition self-healing.
 
 import type { UserRecord } from './types';
 import type { NewUser, UserRepository } from './users.types';
@@ -19,7 +18,7 @@ export class DualWriteUserRepository implements UserRepository {
       await this.primary.importUser(user);
     } catch (err) {
       // A failed lazy import must not break the login: the user is still served
-      // from KV, and the explicit backfill can retry later.
+      // from KV, and a later read can retry the import.
       console.warn('D1 lazy user import failed:', err);
     }
   }

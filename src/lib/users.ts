@@ -3,9 +3,8 @@
 // `AUTH_BACKEND` controls the rollout:
 //   - `kv`   : pre-migration behaviour (also the automatic fallback when no D1
 //              binding exists, e.g. unit tests or a deployment without D1);
-//   - `dual` : writes D1 + KV, reads D1 with a KV fallback (default once D1 is
-//              bound) — used during the backfill;
-//   - `d1`   : D1 only — set this after the backfill has been verified.
+//   - `dual` : writes D1 + KV, reads D1 with a KV fallback (transition);
+//   - `d1`   : D1 only — the production default.
 //
 // Auth routes call getUserRepository() and never touch a binding directly.
 

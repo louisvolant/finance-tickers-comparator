@@ -1,6 +1,6 @@
 # D1 Migration Plan
 
-**Status:** Phases 1–3 implemented (D1 schema, account repository, auth routes, backfill endpoint). The backfill run and the `AUTH_BACKEND=d1` switch remain operational steps; Phases 4–6 are pending.
+**Status:** Phases 1–3 implemented (D1 schema, account repository, auth routes). The production KV namespace was empty, so no backfill was needed and the temporary endpoint was removed. The session existence check from Phase 5 is implemented; `session_version` remains pending. Phases 4 and 6 are pending.
 **Scope:** move account data to Cloudflare D1 first; watchlists, alert state and push subscriptions in a second wave
 **Non-goals:** changing the auth UX, adding email verification/password reset, moving market-data caches out of KV
 
@@ -136,8 +136,9 @@ password, a password account has no Google id.
 - **No auth rate limiting.** Login/registration can be brute-forced. D1 makes an
   `auth_attempts` table easy later; it is not part of this plan.
 - **No password reset.** Unchanged.
-- **Stateless cookies until Phase 5.** A deleted account's cookie remains valid
-  until expiry if Phase 5 is deferred.
+- **Session revocation is partial.** `getSessionUser()` now checks that the
+  account exists, so a deleted account's cookie is rejected. Password changes do
+  not yet invalidate other devices; that requires `session_version` (Phase 5).
 
 ---
 
@@ -462,6 +463,11 @@ WHERE t.alert_high IS NOT NULL OR t.alert_low IS NOT NULL;
 ---
 
 ## 10. Phase 5 — Session revocation (optional, recommended)
+
+**Status (2026-10-22):** the existence check is implemented in
+`getSessionUser()`: a signed cookie is rejected when its account no longer exists
+in the repository. The `session_version` part (password change / log out
+everywhere) is still pending.
 
 **Goal:** a deleted account, a changed password or "log out everywhere" invalidates
 existing cookies.

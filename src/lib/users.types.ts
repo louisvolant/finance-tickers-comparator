@@ -31,7 +31,8 @@ export interface UserRepository {
 
   /**
    * Insert a user if no row with the same id or email exists. Returns true when
-   * a row was inserted. Used by the KV → D1 backfill, so it must be idempotent.
+   * a row was inserted. Used by the legacy KV → D1 import path, so it must be
+   * idempotent.
    */
   importUser(user: UserRecord): Promise<boolean>;
 
