@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { signSession, verifySession } from './authCrypto';
 import { SessionUser } from './types';
+import { getUserRepository } from './users';
 
 import { getEnvVar } from './env';
 
@@ -66,7 +67,17 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     if (!token) return null;
 
-    return await verifySession<SessionUser>(token, getSessionSecret());
+    const session = await verifySession<SessionUser>(token, getSessionSecret());
+    if (!session?.id) return null;
+
+    // A valid signature only proves the cookie was issued by this app; it does
+    // not prove the account still exists. Without this lookup, a session would
+    // survive account deletion or a storage migration until its 30-day expiry
+    // (the "ghost session" case).
+    const user = await getUserRepository().findById(session.id);
+    if (!user) return null;
+
+    return session;
   } catch (err) {
     console.error('getSessionUser error:', err);
     return null;
