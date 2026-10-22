@@ -21,8 +21,8 @@ test.describe('Navigation, Footer Links, Legal & Internationalization', () => {
     // The canonical site URL is visible, not only the author's domain.
     const siteUrl = page.getByTestId('footer-site-url');
     await expect(siteUrl).toBeVisible();
-    await expect(siteUrl).toHaveAttribute('href', 'https://tickertracker.net');
-    await expect(siteUrl).toHaveText('tickertracker.net');
+    await expect(siteUrl).toHaveAttribute('href', 'https://www.tickertracker.net');
+    await expect(siteUrl).toHaveText('www.tickertracker.net');
 
     // Check Personal Page link
     const personalLink = page.locator('a[href="https://www.louisvolant.com"]');

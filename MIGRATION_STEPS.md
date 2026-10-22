@@ -9,6 +9,11 @@
 > Existing KV accounts keep logging in through the read fallback, new accounts are
 > written to both stores, and the explicit backfill covers accounts that have not
 > logged in since the deploy.
+>
+> **Deployment note (2026-10-22):** the live custom domain is
+> `www.tickertracker.net`, attached to the Worker `tickers-tracker` (plural).
+> `wrangler.toml` targets that name and sets `AUTH_BACKEND=d1`. The production KV
+> namespace contained no user records, so the backfill was not needed.
 
 ---
 
@@ -641,7 +646,7 @@ const tickerUrls = STOCK_CATALOG.map((item) => ({
       `NEXT_PUBLIC_APP_URL`.
 - [ ] Keep the number of URLs under the 50,000 sitemap limit; if the catalog
       grows beyond that, split into a sitemap index.
-- [ ] Verify with `curl -s https://tickertracker.net/sitemap.xml` and in Google
+- [ ] Verify with `curl -s https://www.tickertracker.net/sitemap.xml` and in Google
       Search Console.
 
 ### 16.2 Robots
@@ -650,7 +655,7 @@ const tickerUrls = STOCK_CATALOG.map((item) => ({
 - [ ] Disallow `/api/` and keep the sitemap reference.
 - [ ] Do not disallow `/ticker/`: the page shell is user-agnostic (personal data
       is resolved client-side), so it is safe to index.
-- [ ] Verify with `curl -s https://tickertracker.net/robots.txt`.
+- [ ] Verify with `curl -s https://www.tickertracker.net/robots.txt`.
 
 ### 16.3 Metadata
 
@@ -665,7 +670,7 @@ const tickerUrls = STOCK_CATALOG.map((item) => ({
 - [ ] Add Google Search Console verification through
       `metadata.verification.google`, fed by a `GOOGLE_SITE_VERIFICATION`
       environment variable (never hardcoded).
-- [ ] Keep `metadataBase` on `tickertracker.net` (already done).
+- [ ] Keep `metadataBase` on `www.tickertracker.net` (already done).
 - [ ] Check that every public page has a unique `<title>` and a useful
       `<meta name="description">`.
 

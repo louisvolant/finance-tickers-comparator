@@ -130,7 +130,7 @@ GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
 # Optional explicit public application URL (e.g. for OAuth redirects behind reverse proxies)
-NEXT_PUBLIC_APP_URL="https://tickertracker.net"
+NEXT_PUBLIC_APP_URL="https://www.tickertracker.net"
 
 # Shared secret for the optional manual alert-scan endpoint (openssl rand -hex 32).
 # The scheduled scan runs in-process and does not use it.
@@ -306,9 +306,9 @@ The dual backend already imports a KV account into D1 the first time it is read.
 The explicit backfill covers accounts that have not logged in since the deploy:
 
 ```bash
-curl -X POST "https://tickertracker.net/api/admin/migrate-users?dryRun=1" \
+curl -X POST "https://www.tickertracker.net/api/admin/migrate-users?dryRun=1" \
   -H "Authorization: Bearer $MIGRATION_SECRET"
-curl -X POST "https://tickertracker.net/api/admin/migrate-users" \
+curl -X POST "https://www.tickertracker.net/api/admin/migrate-users" \
   -H "Authorization: Bearer $MIGRATION_SECRET"
 ```
 
