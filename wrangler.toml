@@ -21,6 +21,14 @@ id = "d6b4aa8e710d442d97e6c52b1027f92c"
 binding = "ticker_tracker_kv"
 id = "d6b4aa8e710d442d97e6c52b1027f92c"
 
+# Accounts live in D1 from the account migration onwards.
+# Local development uses `.wrangler/state`; replace the placeholder id with the
+# one returned by `wrangler d1 create ticker-tracker-db` before deploying.
+[[d1_databases]]
+binding = "DB"
+database_name = "ticker-tracker-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+
 [observability.logs]
 enabled = true
 head_sampling_rate = 1

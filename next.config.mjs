@@ -1,4 +1,10 @@
 /** @type {import('next').NextConfig} */
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare';
+
+// Makes the Cloudflare bindings (KV, D1) available to `next dev`.
+// It is a no-op outside the local dev server.
+initOpenNextCloudflareForDev();
+
 const nextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ['yahoo-finance2'],

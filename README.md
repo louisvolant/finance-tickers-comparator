@@ -144,6 +144,14 @@ VAPID_SUBJECT="mailto:contact@your-domain.example"
 # Optional build-time max age (days) of the generated market-holiday table
 # before `npm run build` regenerates it. Defaults to 30.
 MARKET_HOLIDAYS_MAX_AGE_DAYS="30"
+
+# Account storage backend: kv | dual | d1 (see "Account storage (D1)").
+# dual is the automatic default once the DB binding exists.
+AUTH_BACKEND="dual"
+
+# Temporary secret for the KV -> D1 account backfill. Remove it (and the
+# /api/admin/migrate-users route) once the migration is verified.
+MIGRATION_SECRET=""
 ```
 
 ### Cloudflare Workers KV & Wrangler Setup
@@ -154,7 +162,7 @@ The application is configured in `wrangler.toml` with:
 
 ```toml
 name = "ticker-tracker"
-main = ".open-next/worker.js"
+main = "custom-worker.ts"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
 keep_vars = true
@@ -170,7 +178,15 @@ id = "d6b4aa8e710d442d97e6c52b1027f92c"
 [[kv_namespaces]]
 binding = "ticker_tracker_kv"
 id = "d6b4aa8e710d442d97e6c52b1027f92c"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ticker-tracker-db"
+database_id = "<id returned by wrangler d1 create>"
 ```
+
+`main` points at `custom-worker.ts` so the scheduled alert scan can run
+in-process (see [Scheduled scan](#scheduled-scan)).
 
 ### Google OAuth Configuration
 
@@ -250,6 +266,70 @@ Yahoo Finance's unofficial endpoints are prone to IP rate limits and crumb expir
    - `getAthlSnapshot()` calls `yf.chart(symbol, { range: 'max', interval: '1mo' })` once, when a user enables alerts on a ticker, and never on a schedule. The snapshot means *the ATH as it stood on the day alerts were enabled*, which is what the alert is defined against.
    - The in-progress monthly candle is dropped before computing the extremes. Keeping it would persist a reference equal to the current price, so the alert would fire the moment it is created.
    - The snapshot is cached in KV for 24h (to absorb repeated clicks, not to stay fresh) and falls back to the quote's 52-week high/low when the history is empty.
+
+### Account storage (D1)
+
+Accounts are the first relational data set moved out of KV. `users` lives in D1;
+quotes, search, ATH/ATL and rates stay in KV as caches. The auth routes depend on
+`UserRepository` (`src/lib/users.types.ts`) and never touch a binding directly:
+
+| Adapter | Behaviour |
+|---|---|
+| `KvUserRepository` | `AUTH_BACKEND=kv`: the pre-migration two-key KV storage |
+| `D1UserRepository` | `AUTH_BACKEND=d1`: SQL only |
+| `DualWriteUserRepository` | `AUTH_BACKEND=dual`: writes D1 + KV, reads D1 with a KV fallback, lazily imports KV-only accounts |
+
+`AUTH_BACKEND` is unset by default: the app uses `dual` when the `DB` binding is
+present and `kv` otherwise, so local unit tests and deployments without D1 keep
+working unchanged.
+
+**Setup**
+
+```bash
+npx wrangler d1 create ticker-tracker-db
+# Copy the returned database_id into wrangler.toml
+npx wrangler d1 migrations apply ticker-tracker-db --remote
+npx wrangler d1 migrations apply ticker-tracker-db --local   # local dev + e2e
+```
+
+`initOpenNextCloudflareForDev()` in `next.config.mjs` exposes the local bindings
+to `next dev`. The custom `.kv-local.json` fallback is only used when no binding
+is available; with the OpenNext dev context, `next dev` uses the local KV/D1 in
+`.wrangler/state`.
+
+**Backfill**
+
+The dual backend already imports a KV account into D1 the first time it is read.
+The explicit backfill covers accounts that have not logged in since the deploy:
+
+```bash
+curl -X POST "https://tickertracker.net/api/admin/migrate-users?dryRun=1" \
+  -H "Authorization: Bearer $MIGRATION_SECRET"
+curl -X POST "https://tickertracker.net/api/admin/migrate-users" \
+  -H "Authorization: Bearer $MIGRATION_SECRET"
+```
+
+The route lists every `user:by-email:*` key (paginated, not limited to the first
+1,000), uses `INSERT OR IGNORE`, and is safe to run twice. `dryRun` never writes.
+It returns counters only and never logs emails or hashes.
+
+**Switch and contract**
+
+1. Run the backfill and verify the counters.
+2. Set `AUTH_BACKEND=d1` and redeploy.
+3. After a soak period, remove `MIGRATION_SECRET` and
+   `src/app/api/admin/migrate-users/route.ts`, then delete the legacy `user:*`
+   KV keys (keep an off-repository backup first).
+
+**Rollback**
+
+While `AUTH_BACKEND=dual`, set it back to `kv` and redeploy: KV is still current.
+After the contract phase, restore the KV backup or use D1 Time Travel.
+
+The unique index `users_email_unique` is the actual guard against concurrent
+duplicate registrations; the route maps the constraint error to `409` without a
+read-before-write check. Tickers, alert state and push subscriptions are still in
+KV and move in Phase 4 of `MIGRATION_STEPS.md`.
 
 ### Price-alert evaluation
 
@@ -429,4 +509,7 @@ Guarded by `tests/tickerCachePolicy.test.ts` (config-level header assertions) an
 - `GET /api/auth/callback/google`: Handle Google OAuth token exchange and session creation.
 - `POST /api/auth/changepassword`: Change password with verification of existing password.
 - `PATCH /api/auth/preferences`: Update the user's preferred reference currency (used for multi-currency tracking).
-- `DELETE /api/auth/delete_my_account`: Permanently delete user profile and associated watchlist data from KV.
+- `DELETE /api/auth/delete_my_account`: Permanently delete the account, its D1 row and the associated KV side data.
+
+### Admin (temporary)
+- `POST /api/admin/migrate-users?dryRun=1`: Idempotent KV → D1 account backfill, paginated and write-free in `dryRun` mode. Requires `Authorization: Bearer $MIGRATION_SECRET`. Remove this route and the secret after the migration is verified.
