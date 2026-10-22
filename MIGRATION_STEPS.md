@@ -1,8 +1,14 @@
 # D1 Migration Plan
 
-**Status:** proposal — not implemented yet
+**Status:** Phases 1–3 implemented (D1 schema, account repository, auth routes, backfill endpoint). The backfill run and the `AUTH_BACKEND=d1` switch remain operational steps; Phases 4–6 are pending.
 **Scope:** move account data to Cloudflare D1 first; watchlists, alert state and push subscriptions in a second wave
 **Non-goals:** changing the auth UX, adding email verification/password reset, moving market-data caches out of KV
+
+> **Implementation note (2026-10-22):** `AUTH_BACKEND` defaults to `dual` as soon
+> as the `DB` binding exists, rather than requiring an explicit dual-write deploy.
+> Existing KV accounts keep logging in through the read fallback, new accounts are
+> written to both stores, and the explicit backfill covers accounts that have not
+> logged in since the deploy.
 
 ---
 
