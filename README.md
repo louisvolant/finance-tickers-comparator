@@ -181,8 +181,8 @@ id = "d6b4aa8e710d442d97e6c52b1027f92c"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "ticker-tracker-db"
-database_id = "<id returned by wrangler d1 create>"
+database_name = "tickertracker-d1"
+database_id = "4ff69e7d-4a6f-4c5c-ad2e-5bc97f788a66"
 ```
 
 `main` points at `custom-worker.ts` so the scheduled alert scan can run
@@ -285,11 +285,14 @@ working unchanged.
 
 **Setup**
 
+The production database is `tickertracker-d1` (already created). For a fresh
+environment:
+
 ```bash
-npx wrangler d1 create ticker-tracker-db
+npx wrangler d1 create tickertracker-d1
 # Copy the returned database_id into wrangler.toml
-npx wrangler d1 migrations apply ticker-tracker-db --remote
-npx wrangler d1 migrations apply ticker-tracker-db --local   # local dev + e2e
+npx wrangler d1 migrations apply tickertracker-d1 --remote
+npx wrangler d1 migrations apply tickertracker-d1 --local   # local dev + e2e
 ```
 
 `initOpenNextCloudflareForDev()` in `next.config.mjs` exposes the local bindings

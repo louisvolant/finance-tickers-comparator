@@ -20,7 +20,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npx wrangler d1 migrations apply ticker-tracker-db --local && npx next dev --hostname 127.0.0.1 --port ${PORT}`,
+    command: `npx wrangler d1 migrations apply tickertracker-d1 --local && npx next dev --hostname 127.0.0.1 --port ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

@@ -160,7 +160,7 @@ local dev and in production. No auth route changes yet.
 ### 6.1 Create the database
 
 ```bash
-npx wrangler d1 create ticker-tracker-db
+npx wrangler d1 create tickertracker-d1
 ```
 
 Add the binding to `wrangler.toml`:
@@ -168,14 +168,14 @@ Add the binding to `wrangler.toml`:
 ```toml
 [[d1_databases]]
 binding = "DB"
-database_name = "ticker-tracker-db"
+database_name = "tickertracker-d1"
 database_id = "<id returned by wrangler>"
 ```
 
 ### 6.2 Migration file
 
 ```bash
-npx wrangler d1 migrations create ticker-tracker-db 0001_users
+npx wrangler d1 migrations create tickertracker-d1 0001_users
 ```
 
 Put the schema from §3.3 into
@@ -184,8 +184,8 @@ Put the schema from §3.3 into
 Apply locally and remotely:
 
 ```bash
-npx wrangler d1 migrations apply ticker-tracker-db --local
-npx wrangler d1 migrations apply ticker-tracker-db --remote
+npx wrangler d1 migrations apply tickertracker-d1 --local
+npx wrangler d1 migrations apply tickertracker-d1 --remote
 ```
 
 ### 6.3 Local development
@@ -205,7 +205,7 @@ now; it is orthogonal.
 
 ### 6.4 Smoke check
 
-- [ ] `wrangler d1 execute ticker-tracker-db --local --command "SELECT 1"` works.
+- [ ] `wrangler d1 execute tickertracker-d1 --local --command "SELECT 1"` works.
 - [ ] `next dev` starts and a temporary debug route can read `env.DB`.
 - [ ] `wrangler deploy --dry-run` shows the `DB` binding.
 - [ ] No bundle-size regression (D1 is a binding).
@@ -497,7 +497,7 @@ request; PBKDF2 already dominates login, and quote reads dominate the dashboard.
 CI must apply local migrations before e2e:
 
 ```json
-"test:e2e": "wrangler d1 migrations apply ticker-tracker-db --local && playwright test"
+"test:e2e": "wrangler d1 migrations apply tickertracker-d1 --local && playwright test"
 ```
 
 Add one concurrency test: two simultaneous registrations with the same email →
