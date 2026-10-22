@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser, setSessionUser } from '@/lib/session';
-import { kvGet, kvPut } from '@/lib/kv';
-import { UserRecord } from '@/lib/types';
 import { ISO_FIAT_CURRENCIES } from '@/lib/currencies';
+import { getUserRepository } from '@/lib/users';
 
 export const runtime = 'nodejs';
 
@@ -29,14 +28,13 @@ export async function PATCH(request: NextRequest) {
 
     const code = preferredCurrency.toUpperCase();
 
-    const user = await kvGet<UserRecord>(`user:by-id:${sessionUser.id}`);
+    const repo = getUserRepository();
+    const user = await repo.findById(sessionUser.id);
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    user.preferredCurrency = code;
-    await kvPut(`user:by-email:${user.email}`, user);
-    await kvPut(`user:by-id:${user.id}`, user);
+    await repo.updatePreferredCurrency(user.id, code);
 
     const updated = { ...sessionUser, preferredCurrency: code };
     await setSessionUser(updated);

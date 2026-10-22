@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kvGet } from '@/lib/kv';
 import { verifyPassword } from '@/lib/authCrypto';
 import { createSessionCookie } from '@/lib/session';
-import { UserRecord } from '@/lib/types';
 import { getRequestOrigin } from '@/lib/env';
+import { getUserRepository } from '@/lib/users';
 
 export const runtime = 'nodejs';
 
@@ -16,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const user = await kvGet<UserRecord>(`user:by-email:${cleanEmail}`);
+    const user = await getUserRepository().findByEmail(cleanEmail);
 
     if (!user || !user.hashedPassword) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });

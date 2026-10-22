@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/session';
-import { kvGet, kvPut } from '@/lib/kv';
 import { verifyPassword, hashPassword } from '@/lib/authCrypto';
-import { UserRecord } from '@/lib/types';
+import { getUserRepository } from '@/lib/users';
 
 export const runtime = 'nodejs';
 
@@ -23,10 +22,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'New password must be at least 6 characters' }, { status: 400 });
     }
 
-    // Retrieve user record from KV
-    let user = await kvGet<UserRecord>(`user:by-id:${sessionUser.id}`);
+    // Retrieve the account through the repository (D1 or KV depending on the
+    // migration backend). The email fallback keeps legacy sessions working.
+    const repo = getUserRepository();
+    let user = await repo.findById(sessionUser.id);
     if (!user && sessionUser.email) {
-      user = await kvGet<UserRecord>(`user:by-email:${sessionUser.email}`);
+      user = await repo.findByEmail(sessionUser.email);
     }
     if (!user || !user.hashedPassword) {
       return NextResponse.json(
@@ -41,13 +42,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Current password is incorrect' }, { status: 403 });
     }
 
-    // Hash new password
+    // Hash and persist the new password. One row update in D1, instead of
+    // rewriting the duplicated KV records.
     const newHashedPassword = await hashPassword(newPassword);
-    user.hashedPassword = newHashedPassword;
-
-    // Persist updated records
-    await kvPut(`user:by-id:${user.id}`, user);
-    await kvPut(`user:by-email:${user.email}`, user);
+    await repo.updatePassword(user.id, newHashedPassword);
 
     return NextResponse.json({ success: true, message: 'Password updated successfully' });
   } catch (err) {

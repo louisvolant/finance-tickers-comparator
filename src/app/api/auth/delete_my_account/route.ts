@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser, clearSession } from '@/lib/session';
-import { kvDelete, kvGet } from '@/lib/kv';
-import { UserRecord } from '@/lib/types';
+import { kvDelete } from '@/lib/kv';
+import { getUserRepository } from '@/lib/users';
 
 export const runtime = 'nodejs';
 
@@ -12,20 +12,21 @@ async function handleDeleteAccount() {
   }
 
   try {
-    const user = await kvGet<UserRecord>(`user:by-id:${sessionUser.id}`);
+    const repo = getUserRepository();
+    const user = await repo.findById(sessionUser.id);
 
-    // Delete user tickers
+    // Delete watchlist and per-user side data. Phase 4 will move these to D1
+    // with ON DELETE CASCADE; until then they are still KV keys.
     await kvDelete(`user:tickers:${sessionUser.id}`);
-
-    // Delete price-alert arming state (kept in its own key so the scanner can
-    // write it without racing the user's watchlist edits).
     await kvDelete(`alert:state:${sessionUser.id}`);
-
-    // Delete Web Push subscriptions: an orphaned endpoint would keep receiving
-    // notifications for an account that no longer exists.
     await kvDelete(`push:subs:${sessionUser.id}`);
 
-    // Delete user records
+    // Delete the account through the repository: D1 row in d1/dual mode, both
+    // KV keys in kv/dual mode.
+    await repo.delete(sessionUser.id);
+
+    // Transition cleanup: in pure D1 mode the legacy KV keys are no longer
+    // written by the repository, so remove them explicitly if they still exist.
     if (user?.email) {
       await kvDelete(`user:by-email:${user.email.toLowerCase()}`);
     }

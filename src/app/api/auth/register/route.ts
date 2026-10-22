@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kvGet, kvPut } from '@/lib/kv';
 import { hashPassword } from '@/lib/authCrypto';
 import { createSessionCookie } from '@/lib/session';
-import { UserRecord } from '@/lib/types';
 import { ISO_FIAT_CURRENCIES } from '@/lib/currencies';
 import { getRequestOrigin } from '@/lib/env';
+import { EmailAlreadyExistsError } from '@/lib/users.types';
+import { getUserRepository } from '@/lib/users';
 
 export const runtime = 'nodejs';
 
@@ -23,12 +23,6 @@ export async function POST(request: NextRequest) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanUsername = (username && typeof username === 'string' ? username.trim() : '') || cleanEmail.split('@')[0];
 
-    // Check if user already exists
-    const existing = await kvGet<UserRecord>(`user:by-email:${cleanEmail}`);
-    if (existing) {
-      return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 });
-    }
-
     const hashedPassword = await hashPassword(password);
     const userId = 'usr_' + crypto.randomUUID().replace(/-/g, '');
 
@@ -37,18 +31,27 @@ export async function POST(request: NextRequest) {
         ? preferredCurrency.toUpperCase()
         : undefined;
 
-    const newUser: UserRecord = {
-      id: userId,
-      email: cleanEmail,
-      username: cleanUsername,
-      hashedPassword,
-      createdAt: Date.now(),
-      preferredCurrency: cleanPreferredCurrency,
-    };
-
-    // Store in KV
-    await kvPut(`user:by-email:${cleanEmail}`, newUser);
-    await kvPut(`user:by-id:${userId}`, newUser);
+    // The repository enforces email uniqueness (D1 unique index in the D1/dual
+    // backends). There is deliberately no read-before-write check here: that is
+    // what made concurrent registrations race on KV.
+    try {
+      await getUserRepository().create({
+        id: userId,
+        email: cleanEmail,
+        username: cleanUsername,
+        hashedPassword,
+        createdAt: Date.now(),
+        preferredCurrency: cleanPreferredCurrency,
+      });
+    } catch (err) {
+      if (err instanceof EmailAlreadyExistsError) {
+        return NextResponse.json(
+          { error: 'An account with this email already exists' },
+          { status: 409 }
+        );
+      }
+      throw err;
+    }
 
     const sessionUser = {
       id: userId,

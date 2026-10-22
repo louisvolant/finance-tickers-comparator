@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kvGet, kvPut } from '@/lib/kv';
 import { createSessionCookie } from '@/lib/session';
-import { UserRecord } from '@/lib/types';
+import { getUserRepository } from '@/lib/users';
 
 import { getEnvVar, getRequestOrigin } from '@/lib/env';
 
@@ -69,25 +68,13 @@ export async function GET(request: NextRequest) {
     const profile = (await userRes.json()) as { id: string; email: string; name?: string };
     const cleanEmail = profile.email.toLowerCase().trim();
 
-    // 3. Find or create user in KV
-    let user = await kvGet<UserRecord>(`user:by-email:${cleanEmail}`);
-
-    if (!user) {
-      const userId = 'usr_' + crypto.randomUUID().replace(/-/g, '');
-      user = {
-        id: userId,
-        email: cleanEmail,
-        username: profile.name || cleanEmail.split('@')[0],
-        googleId: profile.id,
-        createdAt: Date.now(),
-      };
-      await kvPut(`user:by-email:${cleanEmail}`, user);
-      await kvPut(`user:by-id:${userId}`, user);
-    } else if (!user.googleId) {
-      user.googleId = profile.id;
-      await kvPut(`user:by-email:${cleanEmail}`, user);
-      await kvPut(`user:by-id:${user.id}`, user);
-    }
+    // 3. Find or create the account. The unique email index makes this safe
+    // under concurrent callbacks; the dual backend mirrors the result to KV.
+    const user = await getUserRepository().linkGoogleAccount(
+      cleanEmail,
+      profile.id,
+      profile.name || cleanEmail.split('@')[0]
+    );
 
     // 4. Build the session cookie and attach it to the redirect itself.
     const session = await createSessionCookie(
