@@ -8,6 +8,7 @@ import { CurrencyProvider } from '@/context/CurrencyContext';
 import { Navbar } from './components/Navbar';
 import { AuthModal } from './components/AuthModal';
 import { TickerSearchModal } from './components/TickerSearchModal';
+import { BatchAddTickersModal } from './components/BatchAddTickersModal';
 import { EditTrackingModal } from './components/EditTrackingModal';
 import { AccountSettingsModal } from './components/AccountSettingsModal';
 import { Footer } from './components/Footer';
@@ -32,6 +33,7 @@ import {
   DEFAULT_TICKERS,
 } from '@/lib/indexedDb';
 import { UserTicker, TickerQuote } from '@/lib/types';
+import { BatchAddResult } from '@/lib/batchTickers';
 import {
   TrendingUp,
   Search,
@@ -43,6 +45,7 @@ import {
   Zap,
   ArrowUpDown,
   Smartphone,
+  ListPlus,
   X,
 } from 'lucide-react';
 
@@ -54,6 +57,7 @@ function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [accountModalOpen, setAccountModalOpen] = useState(false);
   const [editingTicker, setEditingTicker] = useState<UserTicker | null>(null);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('custom');
@@ -361,6 +365,101 @@ function Dashboard() {
         await saveLocalQuotes({ [payload.symbol.toUpperCase()]: quote });
       }
     }
+  };
+
+  /**
+   * Batch Add Handler
+   *
+   * The modal filters already-tracked symbols before calling this. Authenticated
+   * users hit the batch endpoint (one Yahoo quote request for the whole list);
+   * guests fetch the quotes and build the local watchlist in IndexedDB.
+   */
+  const handleAddTickers = async (symbols: string[]): Promise<BatchAddResult> => {
+    const clean = Array.from(
+      new Set(symbols.map((symbol) => symbol.trim().toUpperCase()).filter(Boolean))
+    );
+
+    if (user) {
+      const res = await fetch('/api/tickers/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols: clean }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to add tickers');
+      }
+
+      const added = (data.added || []) as UserTicker[];
+      const updated = [...tickers, ...added];
+      setTickers(updated);
+      await saveLocalTickers(updated);
+
+      const quotes: Record<string, TickerQuote> = {};
+      for (const ticker of added) {
+        if (ticker.quote) quotes[ticker.symbol.toUpperCase()] = ticker.quote;
+      }
+      if (Object.keys(quotes).length > 0) await saveLocalQuotes(quotes);
+
+      return {
+        added,
+        skipped: data.skipped || [],
+        failed: data.failed || [],
+      };
+    }
+
+    // Guest mode: keep everything local, same result shape as the API.
+    const existing = new Set(existingSymbols);
+    const skipped = clean.filter((symbol) => existing.has(symbol));
+    const toFetch = clean.filter((symbol) => !existing.has(symbol));
+
+    let quotes: Record<string, TickerQuote> = {};
+    if (toFetch.length > 0) {
+      try {
+        const qRes = await fetch(
+          `/api/tickers/quote?symbols=${encodeURIComponent(toFetch.join(','))}`
+        );
+        if (qRes.ok) {
+          const qData = await qRes.json();
+          quotes = qData.quotes || {};
+        }
+      } catch {
+        // Missing quotes are reported as failed below.
+      }
+    }
+
+    const added: UserTicker[] = [];
+    const failed: string[] = [];
+
+    for (const symbol of toFetch) {
+      const quote = quotes[symbol];
+      if (!quote) {
+        failed.push(symbol);
+        continue;
+      }
+
+      added.push({
+        id: 'local_' + crypto.randomUUID().replace(/-/g, ''),
+        symbol,
+        name: quote.name,
+        trackingValue: null,
+        trackingCurrency: null,
+        notes: '',
+        order: tickers.length + added.length,
+        createdAt: Date.now(),
+        quote,
+        exchangeTimezone: quote.exchangeTimezone ?? null,
+      });
+    }
+
+    if (added.length > 0) {
+      const updated = [...tickers, ...added];
+      setTickers(updated);
+      await saveLocalTickers(updated);
+      await saveLocalQuotes(quotes);
+    }
+
+    return { added, skipped, failed };
   };
 
   /**
@@ -811,14 +910,23 @@ function Dashboard() {
               </div>
             )}
 
-            {/* Bottom Add Ticker Button */}
-            <div className="mt-5 flex justify-center sm:justify-start">
+            {/* Bottom Add Ticker / Batch Add Buttons */}
+            <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-2">
               <button
                 onClick={() => setSearchModalOpen(true)}
                 className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm transition shadow-lg shadow-emerald-500/20 cursor-pointer"
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>{t('nav.addTicker')}</span>
+              </button>
+              <button
+                type="button"
+                data-testid="batch-add-open"
+                onClick={() => setBatchModalOpen(true)}
+                className="flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs sm:text-sm transition cursor-pointer"
+              >
+                <ListPlus className="w-4 h-4 text-emerald-400" />
+                <span>{t('batch.button')}</span>
               </button>
             </div>
 
@@ -841,13 +949,24 @@ function Dashboard() {
             <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 mb-4">
               {t('watchlist.emptyBody')}
             </p>
-            <button
-              onClick={() => setSearchModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-emerald-500/20 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>{t('watchlist.emptyAddBtn')}</span>
-            </button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+              <button
+                onClick={() => setSearchModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-emerald-500/20 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{t('watchlist.emptyAddBtn')}</span>
+              </button>
+              <button
+                type="button"
+                data-testid="batch-add-open"
+                onClick={() => setBatchModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs transition cursor-pointer"
+              >
+                <ListPlus className="w-4 h-4 text-emerald-400" />
+                <span>{t('batch.button')}</span>
+              </button>
+            </div>
 
             {/* Zero User Tracking Reassurance before adding first tickers */}
             <div className="mt-6 max-w-lg mx-auto rounded-xl bg-slate-900/80 border border-emerald-500/20 p-3.5 text-left flex items-start gap-2.5 text-xs text-slate-300">
@@ -919,6 +1038,20 @@ function Dashboard() {
         isOpen={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
         onAddTicker={handleAddTicker}
+        onOpenBatch={() => {
+          setSearchModalOpen(false);
+          setBatchModalOpen(true);
+        }}
+        existingSymbols={existingSymbols}
+      />
+      <BatchAddTickersModal
+        isOpen={batchModalOpen}
+        onClose={() => setBatchModalOpen(false)}
+        onAddTickers={handleAddTickers}
+        onOpenSearch={() => {
+          setBatchModalOpen(false);
+          setSearchModalOpen(true);
+        }}
         existingSymbols={existingSymbols}
       />
       <EditTrackingModal

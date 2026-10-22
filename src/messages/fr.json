@@ -73,7 +73,8 @@
     "back": "Retour",
     "addDirect": "Ajouter",
     "adding": "Ajout en cours...",
-    "instantAddHint": "Cliquez sur un ticker pour l'ajouter instantanément. La valeur de référence est 100% optionnelle."
+    "instantAddHint": "Cliquez sur un ticker pour l'ajouter instantanément. La valeur de référence est 100% optionnelle.",
+    "batchAdd": "Ajouter plusieurs à la fois"
   },
   "details": {
     "priceHistory": "Historique des cours",
@@ -251,5 +252,24 @@
     "notificationsBlocked": "Les notifications sont bloquées. Autorisez-les dans les réglages du navigateur.",
     "notificationsUnsupported": "Ce navigateur ne peut pas recevoir de notifications push. Sur iOS, installez d'abord l'application sur l'écran d'accueil.",
     "enableNotifications": "Activer les notifications"
+  },
+  "batch": {
+    "button": "Ajout groupé",
+    "title": "Ajouter plusieurs tickers",
+    "sub": "Collez des symboles séparés par des virgules, des points-virgules ou des retours à la ligne.",
+    "placeholder": "AAPL, MSFT, MC.PA; AIR.PA",
+    "hint": "Jusqu'à {count} symboles à la fois. Les tickers déjà suivis sont ignorés.",
+    "add": "Ajouter {count} tickers",
+    "addOne": "Ajouter le ticker",
+    "empty": "Aucun symbole valide détecté.",
+    "noneNew": "Tous ces tickers sont déjà dans votre liste.",
+    "added": "Ajoutés",
+    "skipped": "Déjà suivis",
+    "failed": "Introuvables",
+    "summary": "{added} ajoutés, {skipped} ignorés, {failed} introuvables",
+    "searchSingle": "Rechercher un seul ticker",
+    "cancel": "Annuler",
+    "error": "Impossible d'ajouter les tickers.",
+    "tooMany": "Trop de symboles. Maximum : {count}."
   }
 }

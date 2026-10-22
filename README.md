@@ -25,6 +25,7 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - Position changes are saved instantly in local IndexedDB and synchronized to Cloudflare KV for registered accounts.
   - An inline banner provides single-tap confirmation (`OK`) to return to standard pricing view.
 - **1-Click Instant Ticker Addition & Bottom Add Button**: Adding tickers from search is immediate with a single click. In addition to the quick search `+` button, an explicit "+ Add Ticker" button is conveniently placed at the bottom of the watchlist right above the privacy notice.
+- **Batch Add (Multiple Tickers at Once)**: A "Batch add" button sits next to the bottom "Add Ticker" button, and the single-search modal links to the same flow. Paste symbols separated by commas, semicolons, spaces or new lines (up to 25); already-tracked symbols are skipped, unknown symbols are reported individually, and authenticated users are validated with a single batched Yahoo quote request. Guests get the same result locally through IndexedDB.
 - **100% Private & Zero User Tracking**: No user tracking or behavioral telemetry. The "tracking value" is strictly an optional personal cost basis or target purchase price chosen and entered solely by the user (or left completely empty).
 - **Streamlined Watchlist Controls**:
   - **Title Row**: `Ma liste de tickers (X tickers)` on the left with the **Display Mode Selector** docked right.
@@ -222,6 +223,7 @@ npm run test:e2e
 Covers:
 - Full user journey: registration, login, adding tickers by symbol and company label, tracking cost basis configuration, reordering tickers, viewing details and price history charts, password change, logout, re-authentication, and account deletion.
 - Multimodal search across tickers (`PUST`), company labels (`LVMH`, `AIRBUS`), and ISIN codes (`FR001400Q9V2`).
+- Batch add: a mixed comma/semicolon list adds the valid symbols, reports the unknown one, updates the watchlist, and is reachable from the single-search modal; the guest path works through IndexedDB.
 - Navigation and internationalization: privacy page, terms page, dynamic language switching across 6 locales, and footer verification (`Personal Page`, `Portfolio`).
 - Price history resilience: transparent recovery when the details request fails on first open, correct loading state (never a premature "no chart points" message), non-empty `1MO` series on first render, and no chart bleed-through between two tickers.
 - Ticker details full page: real route navigation, back arrow to the dashboard, deep-linking and reload survival, browser back button, per-symbol page metadata, range switching, and stable single-column mobile layout with no reflow.
@@ -481,6 +483,7 @@ Guarded by `tests/tickerCachePolicy.test.ts` (config-level header assertions) an
 ### Watchlist Management
 - `GET /api/tickers`: Retrieve authenticated user's tickers enriched with quotes.
 - `POST /api/tickers`: Add a ticker with tracking value baseline and optional notes.
+- `POST /api/tickers/batch`: Add up to 25 tickers at once from a comma/semicolon/space-separated list. Returns `{ added, skipped, failed }`; one batched quote request validates the new symbols and the watchlist is written once.
 - `PATCH /api/tickers`: Update tracking value, notes, or the two price-alert thresholds (`alertHigh`, `alertLow`, optional `alertCurrency`; `null` clears a side). Threshold changes delete the ticker's arming state so the next scan re-arms against the live quote.
 - `DELETE /api/tickers?id={id}`: Remove a ticker and auto-compact order indices.
 - `POST /api/tickers/reorder`: Persist custom ordering sequence of tickers.

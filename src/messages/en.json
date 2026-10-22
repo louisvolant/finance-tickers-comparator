@@ -73,7 +73,8 @@
     "back": "Back",
     "addDirect": "Add",
     "adding": "Adding...",
-    "instantAddHint": "Click any ticker to add it instantly to your watchlist. Cost basis / reference target is completely optional."
+    "instantAddHint": "Click any ticker to add it instantly to your watchlist. Cost basis / reference target is completely optional.",
+    "batchAdd": "Add several at once"
   },
   "details": {
     "priceHistory": "Price History",
@@ -251,5 +252,24 @@
     "notificationsBlocked": "Notifications are blocked. Allow them in your browser settings.",
     "notificationsUnsupported": "This browser cannot receive push notifications. On iOS, install the app on your home screen first.",
     "enableNotifications": "Enable notifications"
+  },
+  "batch": {
+    "button": "Batch add",
+    "title": "Add multiple tickers",
+    "sub": "Paste symbols separated by commas, semicolons or new lines.",
+    "placeholder": "AAPL, MSFT, MC.PA; AIR.PA",
+    "hint": "Up to {count} symbols at a time. Existing tickers are skipped.",
+    "add": "Add {count} tickers",
+    "addOne": "Add ticker",
+    "empty": "No valid symbol detected.",
+    "noneNew": "All these tickers are already in your watchlist.",
+    "added": "Added",
+    "skipped": "Already tracked",
+    "failed": "Not found",
+    "summary": "{added} added, {skipped} skipped, {failed} not found",
+    "searchSingle": "Search a single ticker",
+    "cancel": "Cancel",
+    "error": "Could not add the tickers.",
+    "tooMany": "Too many symbols. Maximum: {count}."
   }
 }

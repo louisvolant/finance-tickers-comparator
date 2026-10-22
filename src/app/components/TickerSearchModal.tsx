@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, X, Loader2, Plus, AlertCircle, Sparkles } from 'lucide-react';
+import { Search, X, Loader2, Plus, AlertCircle, Sparkles, ListPlus } from 'lucide-react';
 import { TickerSearchResult } from '@/lib/types';
 import { useI18n } from '@/context/I18nContext';
 
@@ -9,10 +9,17 @@ interface TickerSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddTicker: (payload: { symbol: string; name: string; trackingValue: number | null; notes?: string }) => Promise<void>;
+  onOpenBatch: () => void;
   existingSymbols: string[];
 }
 
-export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbols }: TickerSearchModalProps) {
+export function TickerSearchModal({
+  isOpen,
+  onClose,
+  onAddTicker,
+  onOpenBatch,
+  existingSymbols,
+}: TickerSearchModalProps) {
   const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TickerSearchResult[]>([]);
@@ -72,6 +79,11 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
     setAddingSymbol(null);
     setError(null);
     onClose();
+  };
+
+  const handleOpenBatch = () => {
+    handleClose();
+    onOpenBatch();
   };
 
   if (!isOpen) return null;
@@ -199,12 +211,21 @@ export function TickerSearchModal({ isOpen, onClose, onAddTicker, existingSymbol
             )}
           </div>
 
-          {/* Discreet hint at the bottom */}
-          <div className="mt-3 pt-3 border-t border-slate-800/60 text-center">
+          {/* Discreet hint + shortcut to the batch modal */}
+          <div className="mt-3 pt-3 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="text-[11px] text-slate-500 flex items-center justify-center gap-1">
               <Sparkles className="w-3 h-3 text-emerald-400" />
               <span>{t('search.instantAddHint')}</span>
             </p>
+            <button
+              type="button"
+              data-testid="search-open-batch"
+              onClick={handleOpenBatch}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition cursor-pointer shrink-0"
+            >
+              <ListPlus className="w-3.5 h-3.5" />
+              <span>{t('search.batchAdd')}</span>
+            </button>
           </div>
         </div>
       </div>

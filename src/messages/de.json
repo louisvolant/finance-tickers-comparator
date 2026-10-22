@@ -73,7 +73,8 @@
     "back": "Zurück",
     "addDirect": "Hinzufügen",
     "adding": "Wird hinzugefügt...",
-    "instantAddHint": "Klicken Sie auf einen Ticker, um ihn sofort hinzuzufügen. Der Referenzwert ist völlig optional."
+    "instantAddHint": "Klicken Sie auf einen Ticker, um ihn sofort hinzuzufügen. Der Referenzwert ist völlig optional.",
+    "batchAdd": "Mehrere auf einmal hinzufügen"
   },
   "details": {
     "priceHistory": "Kursverlauf",
@@ -251,5 +252,24 @@
     "notificationsBlocked": "Benachrichtigungen sind blockiert. Erlauben Sie sie in den Browsereinstellungen.",
     "notificationsUnsupported": "Dieser Browser kann keine Push-Benachrichtigungen empfangen. Installieren Sie die App unter iOS zuerst auf dem Home-Bildschirm.",
     "enableNotifications": "Benachrichtigungen aktivieren"
+  },
+  "batch": {
+    "button": "Mehrfach hinzufügen",
+    "title": "Mehrere Ticker hinzufügen",
+    "sub": "Fügen Sie Symbole ein, getrennt durch Kommas, Semikolons oder Zeilenumbrüche.",
+    "placeholder": "AAPL, MSFT, MC.PA; AIR.PA",
+    "hint": "Bis zu {count} Symbole gleichzeitig. Bereits beobachtete Ticker werden übersprungen.",
+    "add": "{count} Ticker hinzufügen",
+    "addOne": "Ticker hinzufügen",
+    "empty": "Kein gültiges Symbol erkannt.",
+    "noneNew": "Alle diese Ticker sind bereits in Ihrer Watchlist.",
+    "added": "Hinzugefügt",
+    "skipped": "Bereits beobachtet",
+    "failed": "Nicht gefunden",
+    "summary": "{added} hinzugefügt, {skipped} übersprungen, {failed} nicht gefunden",
+    "searchSingle": "Einen einzelnen Ticker suchen",
+    "cancel": "Abbrechen",
+    "error": "Die Ticker konnten nicht hinzugefügt werden.",
+    "tooMany": "Zu viele Symbole. Maximum: {count}."
   }
 }
