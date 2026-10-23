@@ -223,7 +223,7 @@
     "opensTomorrow": "Ouvre demain à {time}",
     "opensOn": "Ouvre {day} à {time}",
     "closed": "Fermé",
-    "tooltip": "Heure locale de la place : {zone}"
+    "tooltip": "Votre heure locale · place : {zone}"
   },
   "alerts": {
     "title": "Alertes de prix",

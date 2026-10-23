@@ -223,7 +223,7 @@
     "opensTomorrow": "Opens tomorrow at {time}",
     "opensOn": "Opens {day} at {time}",
     "closed": "Closed",
-    "tooltip": "Local exchange time: {zone}"
+    "tooltip": "Your local time · exchange: {zone}"
   },
   "alerts": {
     "title": "Price Alerts",

@@ -2,7 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   getMarketStatus,
-  formatExchangeTime,
+  formatClockTime,
   describeOpeningDay,
 } from '../src/lib/marketStatus';
 
@@ -56,11 +56,18 @@ describe('Market status derived from sessions', () => {
   });
 });
 
-describe('Venue-time formatting', () => {
-  test('formats the wall-clock time in the venue timezone with a 24h clock', () => {
+describe('Opening-time formatting', () => {
+  test('formats the wall-clock time in the given timezone with a 24h clock', () => {
     // 15:30Z is 17:30 in Paris in October (CEST).
-    assert.equal(formatExchangeTime(at(15, 30), 'Europe/Paris', 'en'), '17:30');
-    assert.equal(formatExchangeTime(at(15, 30), 'Europe/Paris', 'fr'), '17:30');
+    assert.equal(formatClockTime(at(15, 30), 'en', 'Europe/Paris'), '17:30');
+    assert.equal(formatClockTime(at(15, 30), 'fr', 'Europe/Paris'), '17:30');
+  });
+
+  test('renders a US session opening on the viewer clock', () => {
+    // NVDA opens at 09:30 in New York, which is 15:30 in Paris in October.
+    const opensAt = Date.UTC(2026, 9, 23, 13, 30);
+    assert.equal(formatClockTime(opensAt, 'en', 'America/New_York'), '09:30');
+    assert.equal(formatClockTime(opensAt, 'en', 'Europe/Paris'), '15:30');
   });
 
   test('says today, tomorrow or the weekday for an opening', () => {
@@ -79,11 +86,14 @@ describe('Venue-time formatting', () => {
     );
   });
 
-  test('uses the venue calendar day, not the viewer one', () => {
-    // 03:30 UTC on 17 Oct is still 16 Oct in New York, but already 17 Oct in Paris.
-    const nowNy = Date.UTC(2026, 9, 17, 3, 30);
-    const opensParis = Date.UTC(2026, 9, 17, 7);
-    assert.deepEqual(describeOpeningDay(opensParis, 'Europe/Paris', nowNy, 'en'), { kind: 'today' });
+  test('describes the opening day in the timezone it is rendered in', () => {
+    // 23:00Z on 16 Oct is already 17 Oct in Paris but still 16 Oct in New York.
+    const now = Date.UTC(2026, 9, 16, 23);
+    const opensAt = Date.UTC(2026, 9, 17, 7);
+    assert.deepEqual(describeOpeningDay(opensAt, 'Europe/Paris', now, 'en'), { kind: 'today' });
+    assert.deepEqual(describeOpeningDay(opensAt, 'America/New_York', now, 'en'), {
+      kind: 'tomorrow',
+    });
   });
 
   test('minutes are never negative in the just-closed state', () => {

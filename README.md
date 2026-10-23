@@ -18,7 +18,7 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - **Right side**: Current price and daily change (% evolution) with extended session indicators (`🌅` / `🌙`).
   - **Details Modal**: Personal cost basis / target price is streamlined away from collapsed cards into the opened details modal right next to the "Equity" pill.
 - **Pre-Market, After-Hours & Sunday Futures Indicator**: Displays real-time extended session percentage indicators directly beside daily change (e.g. `▼ -0.41% (🌅 +0.03%)` or `(🌙 -0.12%)`). Essential for monitoring after-hours earnings reports, early morning pre-market trading, and Sunday evening futures pre-trends before Monday market open. Drops below **-0.20%** are highlighted in deep red / rose.
-- **Market Status (Open / Just Closed / Opens Soon)**: Mobile cards and the ticker page show whether the venue is open (with its closing time), closed for less than 30 minutes, opening within 60 minutes (with a countdown), or closed until its next session (today, tomorrow or the weekday). Sessions are computed server-side from the venue timezone, weekends and exchange holidays; the holiday dates are pre-generated into `marketHolidays.json` so the runtime does no holiday computation and carries no holiday library (see [Market holiday table](#market-holiday-table)). Futures are not shown: their values are only displayed while they trade.
+- **Market Status (Open / Just Closed / Opens Soon)**: Mobile cards and the ticker page show whether the venue is open (with its closing time), closed for less than 30 minutes, opening within 60 minutes (with a countdown), or closed until its next session (today, tomorrow or the weekday). Times and day labels use the viewer's local timezone, and the badge tooltip names the exchange timezone. Sessions are computed server-side from the venue timezone, weekends and exchange holidays; the holiday dates are pre-generated into `marketHolidays.json` so the runtime does no holiday computation and carries no holiday library (see [Market holiday table](#market-holiday-table)). Futures are not shown: their values are only displayed while they trade.
 - **Reliable Reorganization Mode (Flèches Haut / Bas)**: Select "Reorganize" (`Réorganisation`) from the display dropdown to enter ordering mode:
   - The right-hand price block on each mobile card is dynamically replaced with intuitive **Up / Down arrow buttons** (`ChevronUp` / `ChevronDown`).
   - Tapping up/down immediately reorders tickers without any touch gesture conflicts between scrolling, tapping, and long-presses.
@@ -220,6 +220,7 @@ Covers:
 - `fetchJsonWithRetry()` retry policy (transient vs. deterministic failures, backoff, give-up behaviour)
 - Cache policy for personalized routes: `next.config.mjs` header rules for `/ticker/:path*` (`private` + `no-store`, no `s-maxage`) and that static PWA assets stay cacheable
 - Yahoo Finance client lifecycle: no module-scope instantiation, a single factory, exactly one client per batch, and a fresh client per single-quote call (guards the Workers cross-request promise race)
+- Market status: session-derived open / just-closed / opens-soon / closed states, viewer-timezone clock formatting, and opening-day labels that follow the rendered timezone
 
 ### Run End-to-End Tests (Playwright)
 ```bash
@@ -234,6 +235,7 @@ Covers:
 - Ticker details full page: real route navigation, back arrow to the dashboard, deep-linking and reload survival, browser back button, per-symbol page metadata, range switching, and stable single-column mobile layout with no reflow.
 - Cache privacy for the ticker page: `no-store` response headers, no personalized markers in the server-rendered HTML, a dynamic (never pre-rendered) route, and a Cache Storage inspection proving the Service Worker persists nothing under `/ticker/` or `/api/tickers`.
 - Quote API concurrency: parallel batch requests, mixed parallel calls across every Yahoo-backed endpoint, and full symbol fan-out. Note this runs under Node and therefore cannot reproduce the Workers-only crumb race - see the request-scoped client note above.
+- Quotes, sessions and market status: venue open / just closed / opens soon / closed badges, and a US opening displayed on a Paris viewer's clock with the exchange timezone in the tooltip.
 
 ---
 

@@ -63,3 +63,27 @@ test.describe('Market status badge', () => {
     await expect(page.locator('tr[data-symbol="MC.PA"] [data-testid="market-status"]')).toHaveCount(0);
   });
 });
+
+test.describe('Market status times', () => {
+  // The badge must use the viewer's clock, not the exchange clock.
+  test.use({ timezoneId: 'Europe/Paris' });
+
+  test('a US opening is shown in the viewer timezone', async ({ page, request }) => {
+    const session = await firstSession(request, 'NVDA');
+    await page.clock.setFixedTime(new Date(session.opensAt - 2 * 60 * MIN));
+
+    await page.goto('/ticker/NVDA');
+
+    const parisTime = new Intl.DateTimeFormat('en', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+      timeZone: 'Europe/Paris',
+    }).format(session.opensAt);
+
+    const badge = page.getByTestId('market-status');
+    await expect(badge).toHaveAttribute('data-state', 'closed', { timeout: 15000 });
+    await expect(badge).toContainText(`Opens today at ${parisTime}`);
+    await expect(badge).toHaveAttribute('title', /America\/New_York/);
+  });
+});

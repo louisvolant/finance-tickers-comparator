@@ -223,7 +223,7 @@
     "opensTomorrow": "Apre domani alle {time}",
     "opensOn": "Apre {day} alle {time}",
     "closed": "Chiuso",
-    "tooltip": "Ora locale della borsa: {zone}"
+    "tooltip": "La tua ora locale · borsa: {zone}"
   },
   "alerts": {
     "title": "Avvisi di prezzo",

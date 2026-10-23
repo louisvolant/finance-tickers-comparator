@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { TickerQuote } from '@/lib/types';
 import { useI18n } from '@/context/I18nContext';
-import { describeOpeningDay, formatExchangeTime, getMarketStatus } from '@/lib/marketStatus';
+import { describeOpeningDay, formatClockTime, getMarketStatus, getViewerTimeZone } from '@/lib/marketStatus';
 
 const REFRESH_MS = 30_000;
 
@@ -42,11 +42,15 @@ export function MarketStatusBadge({
   const status = getMarketStatus(quote.marketSessions, now);
   if (!status) return null;
 
+  // Session instants are absolute; display them on the viewer's clock, falling
+  // back to the venue clock when the browser timezone is unavailable.
+  const viewerTimezone = getViewerTimeZone() ?? timezone;
+
   let text: string;
   let tone: string;
 
   if (status.kind === 'open') {
-    text = t('marketStatus.open', { time: formatExchangeTime(status.at, timezone, locale) });
+    text = t('marketStatus.open', { time: formatClockTime(status.at, locale, viewerTimezone) });
     tone = TONE.open;
   } else if (status.kind === 'just_closed') {
     text = t('marketStatus.justClosed', { min: status.minutes });
@@ -55,8 +59,8 @@ export function MarketStatusBadge({
     text = t('marketStatus.opensSoon', { min: status.minutes });
     tone = TONE.opens_soon;
   } else {
-    const time = formatExchangeTime(status.at, timezone, locale);
-    const day = describeOpeningDay(status.at, timezone, now, locale);
+    const time = formatClockTime(status.at, locale, viewerTimezone);
+    const day = describeOpeningDay(status.at, viewerTimezone, now, locale);
     if (day.kind === 'today') text = t('marketStatus.opensToday', { time });
     else if (day.kind === 'tomorrow') text = t('marketStatus.opensTomorrow', { time });
     else text = t('marketStatus.opensOn', { day: day.name, time });

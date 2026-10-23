@@ -223,7 +223,7 @@
     "opensTomorrow": "Öffnet morgen um {time}",
     "opensOn": "Öffnet {day} um {time}",
     "closed": "Geschlossen",
-    "tooltip": "Ortszeit der Börse: {zone}"
+    "tooltip": "Ihre Ortszeit · Börse: {zone}"
   },
   "alerts": {
     "title": "Preisalarme",

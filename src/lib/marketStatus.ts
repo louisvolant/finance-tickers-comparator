@@ -54,17 +54,29 @@ export function getMarketStatus(
   return { kind: 'closed', at: next.opensAt, minutes: Math.floor(untilOpen / 60_000) };
 }
 
-/** Wall-clock time of the venue, e.g. "17:30". */
-export function formatExchangeTime(epochMs: number, timezone: string, locale: string): string {
+/**
+ * Wall-clock time of an instant in `timezone`, or in the viewer's timezone when
+ * omitted, e.g. "17:30".
+ */
+export function formatClockTime(epochMs: number, locale: string, timezone?: string): string {
   return new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
-    timeZone: timezone,
+    ...(timezone ? { timeZone: timezone } : {}),
   }).format(epochMs);
 }
 
-/** Calendar day of an instant in the venue's timezone, as a day index. */
+/** IANA timezone of the viewer, or undefined when the runtime cannot resolve it. */
+export function getViewerTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Calendar day of an instant in `timezone`, as a day index. */
 function venueDayIndex(epochMs: number, timezone: string): number {
   const key = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
@@ -81,7 +93,7 @@ export type OpeningDay =
   | { kind: 'tomorrow' }
   | { kind: 'weekday'; name: string };
 
-/** Whether an opening instant falls today, tomorrow, or on a later weekday (venue time). */
+/** Whether an opening instant falls today, tomorrow, or on a later weekday in `timezone`. */
 export function describeOpeningDay(
   opensAt: number,
   timezone: string,
