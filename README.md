@@ -48,6 +48,12 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - **2nd click**: sorts ascending (`asc`) with an active green upward arrow (`ArrowUp`).
   - **3rd click**: clears the column sort and restores the base order.
   - Clicking another column clears the previous column sort and initiates descending sort on the new column. Applies across custom, alphabetical, and grouped market views.
+- **Magic Demo Playground (Interactive Animated Showcase)**: An interactive landing component that eliminates signup friction by showing the core product magic in under 3 seconds:
+  - **Typewriter Terminal Simulation**: Simulates pasting raw or unstructured notes with fluid ~26ms character typing, line numbers, and macOS-style traffic lights.
+  - **Cascading Live Financial Cards**: Staggered cards reveal live quotes, exchange pills, and color-coded Forward P/E valuation tiers as lines are parsed.
+  - **Dual Responsive Architecture**: Split-screen side-by-side mode on desktop (`md:`), and an automatic morphing view with tactile comparison tabs (`Raw input` ⇄ `Enriched cards`) on mobile.
+  - **3 Realistic 1-Click Presets**: Preloaded with Broker notes (`AAPL, MSFT...`), PEA & US mix (`MC.PA, AIR.PA, TSLA...`), and unstructured forum discussions.
+  - **Zero-Friction CTAs & Replay**: One-click replay (`↺`) plus direct access to the live batch-add importer.
 - **Account Lifecycle & Security**: Registration, login, Google OAuth 2.0 integration, password updates (`/api/auth/changepassword`), and complete account deletion (`/api/auth/delete_my_account`).
 - **Multilingual Support (i18n)**: Full localization across 6 languages: English (`en`), French (`fr`), German (`de`), Spanish (`es`), Italian (`it`), and Portuguese (`pt`), with an active language selector.
 - **SEO & Legal**: Comprehensive metadata, dynamic `sitemap.xml`, `robots.txt`, Privacy Policy (`/privacy`), Terms of Service (`/terms`), and footer links to [Personal Page](https://www.louisvolant.com) and [Portfolio](https://www.louisvolant.com/portfolio).

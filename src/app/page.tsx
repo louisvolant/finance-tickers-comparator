@@ -15,6 +15,7 @@ import { Footer } from './components/Footer';
 import { TickerRow } from './components/TickerRow';
 import { TickerCard } from './components/TickerCard';
 import { TickerTableHeader } from './components/TickerTableHeader';
+import { MagicDemoPlayground } from './components/MagicDemoPlayground';
 import { DisplayModeSelector } from './components/DisplayModeSelector';
 import { MarketFilterBar } from './components/MarketFilterBar';
 import {
@@ -615,6 +616,14 @@ function Dashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Interactive Magic Demo Playground for prospective users */}
+        {!user && (
+          <MagicDemoPlayground
+            onRegisterClick={() => openAuthModal('register')}
+            onBatchAddClick={() => setBatchModalOpen(true)}
+          />
         )}
 
         {/* Dashboard Title & Display Mode Selector */}
