@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { I18nProvider, useI18n } from '@/context/I18nContext';
-import { CurrencyProvider } from '@/context/CurrencyContext';
+import { CurrencyProvider, useCurrencyRates } from '@/context/CurrencyContext';
 import { Navbar } from './components/Navbar';
 import { AuthModal } from './components/AuthModal';
 import { TickerSearchModal } from './components/TickerSearchModal';
@@ -14,6 +14,7 @@ import { AccountSettingsModal } from './components/AccountSettingsModal';
 import { Footer } from './components/Footer';
 import { TickerRow } from './components/TickerRow';
 import { TickerCard } from './components/TickerCard';
+import { TickerTableHeader } from './components/TickerTableHeader';
 import { DisplayModeSelector } from './components/DisplayModeSelector';
 import { MarketFilterBar } from './components/MarketFilterBar';
 import {
@@ -24,6 +25,12 @@ import {
 } from '@/lib/displayModes';
 import { MOVED_TICKER_STORAGE_KEY } from '@/lib/utils';
 import { filterTickersByQuery } from '@/lib/watchlistSearch';
+import {
+  SortColumn,
+  SortDirection,
+  getNextSort,
+  sortTickers,
+} from '@/lib/tickerSorting';
 import {
   getLocalTickers,
   saveLocalTickers,
@@ -52,6 +59,7 @@ import {
 function Dashboard() {
   const { user, openAuthModal } = useAuth();
   const { t } = useI18n();
+  const { rates } = useCurrencyRates();
   const router = useRouter();
   const [tickers, setTickers] = useState<UserTicker[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,9 +71,24 @@ function Dashboard() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('custom');
   const [selectedExchanges, setSelectedExchanges] = useState<string[]>([]);
   const [watchlistQuery, setWatchlistQuery] = useState('');
+  const [sortState, setSortState] = useState<{ column: SortColumn | null; direction: SortDirection | null }>({
+    column: null,
+    direction: null,
+  });
+  const sortColumn = sortState.column;
+  const sortDirection = sortState.direction;
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [flash, setFlash] = useState<{ id: string; key: number } | null>(null);
   const flashFor = (id: string) => (flash && flash.id === id ? flash.key : undefined);
+
+  /**
+   * Handle sort toggle on table column headers.
+   * Cycle: desc -> asc -> clear.
+   * Clicking a different column clears any existing sort and starts with desc.
+   */
+  const handleColumnSort = useCallback((column: SortColumn) => {
+    setSortState((prev) => getNextSort(prev.column, prev.direction, column));
+  }, []);
 
   /**
    * Open the full-page ticker view. Pushing a real route (instead of toggling
@@ -124,18 +147,28 @@ function Dashboard() {
   const visibleTickerIds = useMemo(() => visibleTickers.map((ticker) => ticker.id), [visibleTickers]);
 
   const displayedTickers = useMemo(() => {
+    if (sortColumn && sortDirection) {
+      return sortTickers(visibleTickers, sortColumn, sortDirection, rates);
+    }
     if (displayMode === 'alphabetical') {
       return [...visibleTickers].sort((a, b) => a.symbol.localeCompare(b.symbol));
     }
     return visibleTickers;
-  }, [visibleTickers, displayMode]);
+  }, [visibleTickers, displayMode, sortColumn, sortDirection, rates]);
 
   const exchangeGroups = useMemo(() => {
     if (displayMode === 'by_exchange') {
-      return groupTickersByExchange(visibleTickers);
+      const groups = groupTickersByExchange(visibleTickers);
+      if (sortColumn && sortDirection) {
+        return groups.map((g) => ({
+          ...g,
+          tickers: sortTickers(g.tickers, sortColumn, sortDirection, rates),
+        }));
+      }
+      return groups;
     }
     return [];
-  }, [visibleTickers, displayMode]);
+  }, [visibleTickers, displayMode, sortColumn, sortDirection, rates]);
 
   // Online / offline detector
   useEffect(() => {
@@ -727,20 +760,12 @@ function Dashboard() {
                     {/* Desktop Table for this exchange */}
                     <div className="hidden md:block rounded-xl bg-slate-900/80 border border-slate-800/70 overflow-hidden shadow">
                       <table className="w-full text-left border-collapse">
-                        <thead>
-                          <tr className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                            <th className="py-2.5 px-3 w-14 text-center">
-                              <ArrowUpDown className="w-3.5 h-3.5 mx-auto text-slate-500" />
-                            </th>
-                            <th className="py-2.5 px-4">{t('watchlist.colTicker')}</th>
-                            <th className="py-2.5 px-4 text-right">{t('watchlist.colPrice')}</th>
-                            <th className="py-2.5 px-4 text-right">{t('watchlist.colTracking')}</th>
-                            <th className="py-2.5 px-4 text-center">{t('watchlist.colDiff')}</th>
-                            <th className="py-2.5 px-4 text-center">{t('watchlist.colCurrentPE')}</th>
-                            <th className="py-2.5 px-4 text-center">{t('watchlist.colForwardPE')}</th>
-                            <th className="py-2.5 px-3 text-right">{t('watchlist.colActions')}</th>
-                          </tr>
-                        </thead>
+                        <TickerTableHeader
+                          sortColumn={sortColumn}
+                          sortDirection={sortDirection}
+                          onSort={handleColumnSort}
+                          compact
+                        />
                         <tbody className="divide-y divide-slate-800/40 text-sm">
                           {group.tickers.map((ticker, idx) => (
                             <TickerRow
@@ -784,20 +809,11 @@ function Dashboard() {
                 {/* Desktop Table View (>= 768px) */}
                 <div className="hidden md:block rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
                   <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                        <th className="py-3 px-3 w-14 text-center">
-                          <ArrowUpDown className="w-3.5 h-3.5 mx-auto text-slate-500" />
-                        </th>
-                        <th className="py-3 px-4">{t('watchlist.colTicker')}</th>
-                        <th className="py-3 px-4 text-right">{t('watchlist.colPrice')}</th>
-                        <th className="py-3 px-4 text-right">{t('watchlist.colTracking')}</th>
-                        <th className="py-3 px-4 text-center">{t('watchlist.colDiff')}</th>
-                        <th className="py-3 px-4 text-center">{t('watchlist.colCurrentPE')}</th>
-                        <th className="py-3 px-4 text-center">{t('watchlist.colForwardPE')}</th>
-                        <th className="py-3 px-3 text-right">{t('watchlist.colActions')}</th>
-                      </tr>
-                    </thead>
+                    <TickerTableHeader
+                      sortColumn={sortColumn}
+                      sortDirection={sortDirection}
+                      onSort={handleColumnSort}
+                    />
                     <tbody className="divide-y divide-slate-800/40 text-sm">
                       {displayedTickers.map((ticker, idx) => (
                         <TickerRow
@@ -839,30 +855,29 @@ function Dashboard() {
                 {/* Desktop Table View (>= 768px) */}
                 <div className="hidden md:block rounded-2xl bg-slate-900/60 border border-slate-800/80 overflow-hidden shadow-xl">
                   <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                        <th className="py-3 px-3 w-14 text-center">
-                          <ArrowUpDown className="w-3.5 h-3.5 mx-auto text-slate-500" />
-                        </th>
-                        <th className="py-3 px-4">{t('watchlist.colTicker')}</th>
-                        <th className="py-3 px-4 text-right">{t('watchlist.colPrice')}</th>
-                        <th className="py-3 px-4 text-right">{t('watchlist.colTracking')}</th>
-                        <th className="py-3 px-4 text-center">{t('watchlist.colDiff')}</th>
-                        <th className="py-3 px-4 text-center">{t('watchlist.colCurrentPE')}</th>
-                        <th className="py-3 px-4 text-center">{t('watchlist.colForwardPE')}</th>
-                        <th className="py-3 px-3 text-right">{t('watchlist.colActions')}</th>
-                      </tr>
-                    </thead>
+                    <TickerTableHeader
+                      sortColumn={sortColumn}
+                      sortDirection={sortDirection}
+                      onSort={handleColumnSort}
+                    />
                     <tbody className="divide-y divide-slate-800/40 text-sm">
-                      {visibleTickers.map((ticker, idx) => (
+                      {displayedTickers.map((ticker, idx) => (
                         <TickerRow
                           key={ticker.id}
                           ticker={ticker}
                           index={idx}
-                          totalCount={visibleTickers.length}
+                          totalCount={displayedTickers.length}
                           flashKey={flashFor(ticker.id)}
-                          onMoveUp={() => handleMove(ticker.id, 'up', visibleTickerIds)}
-                          onMoveDown={() => handleMove(ticker.id, 'down', visibleTickerIds)}
+                          onMoveUp={
+                            !sortColumn
+                              ? () => handleMove(ticker.id, 'up', visibleTickerIds)
+                              : () => {}
+                          }
+                          onMoveDown={
+                            !sortColumn
+                              ? () => handleMove(ticker.id, 'down', visibleTickerIds)
+                              : () => {}
+                          }
                           onClick={openTickerDetails}
                           onEdit={(t) => setEditingTicker(t)}
                           onDelete={(t) => handleDeleteTicker(t)}
@@ -891,16 +906,24 @@ function Dashboard() {
 
                 {/* Mobile Cards View (< 768px) with Up/Down Buttons in Reorder Mode */}
                 <div className="md:hidden space-y-2.5">
-                  {visibleTickers.map((ticker, idx) => (
+                  {displayedTickers.map((ticker, idx) => (
                     <TickerCard
                       key={ticker.id}
                       ticker={ticker}
                       index={idx}
-                      totalCount={visibleTickers.length}
-                      isReorderMode={displayMode === 'reorder'}
+                      totalCount={displayedTickers.length}
+                      isReorderMode={displayMode === 'reorder' && !sortColumn}
                       flashKey={flashFor(ticker.id)}
-                      onMoveUp={() => handleMove(ticker.id, 'up', visibleTickerIds)}
-                      onMoveDown={() => handleMove(ticker.id, 'down', visibleTickerIds)}
+                      onMoveUp={
+                        !sortColumn
+                          ? () => handleMove(ticker.id, 'up', visibleTickerIds)
+                          : () => {}
+                      }
+                      onMoveDown={
+                        !sortColumn
+                          ? () => handleMove(ticker.id, 'down', visibleTickerIds)
+                          : () => {}
+                      }
                       onClick={openTickerDetails}
                       onEdit={(t) => setEditingTicker(t)}
                       onDelete={(t) => handleDeleteTicker(t)}

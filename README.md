@@ -43,6 +43,11 @@ A modern, lightning-fast stock and valuation multiples tracker built with Next.j
   - **Alphabetical (A → Z)**: Global alphabetical sorting by ticker symbol.
   - **By Trading Market (Par place de cotation)**: Intelligently groups tickers by exchange system (`Euronext Paris`, `NASDAQ`, `NYSE`, `Deutsche Börse XETRA`, `London Stock Exchange`, etc.) with stylish header badges, and sorts tickers alphabetically inside each exchange.
   - Choice is remembered locally across browser sessions.
+- **Interactive Table Column Sorting**: Click any table column header on desktop to sort dynamically (`Ticker & Name`, `Current Price`, `Reference Target`, `% Diff`, `Current P/E`, `Forward P/E`):
+  - **1st click**: sorts descending (`desc`) with an active green downward arrow (`ArrowDown`).
+  - **2nd click**: sorts ascending (`asc`) with an active green upward arrow (`ArrowUp`).
+  - **3rd click**: clears the column sort and restores the base order.
+  - Clicking another column clears the previous column sort and initiates descending sort on the new column. Applies across custom, alphabetical, and grouped market views.
 - **Account Lifecycle & Security**: Registration, login, Google OAuth 2.0 integration, password updates (`/api/auth/changepassword`), and complete account deletion (`/api/auth/delete_my_account`).
 - **Multilingual Support (i18n)**: Full localization across 6 languages: English (`en`), French (`fr`), German (`de`), Spanish (`es`), Italian (`it`), and Portuguese (`pt`), with an active language selector.
 - **SEO & Legal**: Comprehensive metadata, dynamic `sitemap.xml`, `robots.txt`, Privacy Policy (`/privacy`), Terms of Service (`/terms`), and footer links to [Personal Page](https://www.louisvolant.com) and [Portfolio](https://www.louisvolant.com/portfolio).
